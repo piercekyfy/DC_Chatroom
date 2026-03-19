@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import common.MessageBuilder;
+import common.MessageHeader;
 import server.client.Client;
 
 
@@ -17,10 +19,8 @@ public class Server {
 	private List<Client> clients = Collections.synchronizedList(new ArrayList<Client>());
 	private boolean closed = false;
 	
-	private byte[] buffer = new byte[1024];
-	
 	private Controller controller;
-	private Router router;
+	private Router<Controller> router;
 	
 	private Thread acceptThread;
 	private Thread handleThread;
@@ -43,8 +43,18 @@ public class Server {
 		handleThread.join();
 	}
 	
-	public void RouteMessage(Client requester, int code, int[] sizes, byte[] content) throws NotFoundException, InvalidContentException {
-		router.route(code, sizes, content);
+	public void RouteMessage(Client requester, MessageHeader header, byte[] content) throws NotFoundException, InvalidContentException {
+		MessageContext context = new MessageContext(requester);
+		
+		try {
+			router.route(context, header.getCode(), header.getSizes(), content);
+		} catch (NotFoundException ex) {
+			requester.sendMessage(new MessageBuilder().setAsInvalidHeaderArg(0)); // code
+			requester.close();
+		} catch (InvalidContentException ex) {
+			requester.sendMessage(new MessageBuilder().setAsInvalidContent(ex.getIndex()));
+			requester.close();
+		}
 	}
 	
 	
@@ -55,7 +65,7 @@ public class Server {
 				for(Client client : clients) {
 					
 					if(client.HasError()) {
-						System.out.println(client + " disconnected unexpectedly.");
+						System.out.println(client + " disconnected.");
 						toRemove.add(client);
 						continue;
 					}
@@ -64,6 +74,7 @@ public class Server {
 				}
 
 				for(Client client : toRemove) {
+					client.close();
 					clients.remove(client);
 				}
 			}

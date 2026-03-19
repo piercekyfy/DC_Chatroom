@@ -1,10 +1,16 @@
 package client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+
+import common.HeaderParseResult;
+import common.MessageBuilder;
+import common.ParseResult;
+import common.StreamUtils;
 
 public class Main {
 
@@ -17,32 +23,24 @@ public class Main {
 		
 		System.out.println("Send 1");
 		
-		byte[] msg = StandardCharsets.UTF_8.encode("Hello world!").array();
+		MessageBuilder builder = new MessageBuilder();
+		builder.setCode(1);
+		builder.appendContentInt(11);
+		builder.appendContentString("Hello World!");
 		
-		// [code (int)] [count (int)]  [size (int), size(int), ...]
-		byte[] header = ByteBuffer.allocate(Integer.BYTES * 4)
-		    .putInt(1)
-		    .putInt(2)
-		    .putInt(Integer.BYTES)
-		    .putInt(msg.length)
-		    .array();
+		out.write(builder.build());
 		
-		// [bytes (of size[i]), bytes, ...]
-		byte[] content = ByteBuffer.allocate(Integer.BYTES + msg.length)
-			.putInt(11)
-		    .put(msg)
-		    .array();
-
-		byte[] message = ByteBuffer.allocate(header.length + content.length)
-		    .put(header)
-		    .put(content)
-		    .array();
+		InputStream in = s.getInputStream();
 		
-		out.write(message);
-		out.flush();
-	
-		System.out.println("Send 2");
-
+		HeaderParseResult headerResult = StreamUtils.readHeader(in);
+		
+		byte[] buffer = new byte[1024];
+		in.read(buffer);
+		
+		System.out.println("ReplyCode:" + headerResult.getValue().getCode());
+		
+		//System.out.println("ErrorDef: " + StreamUtils.parseInt(buffer, 0).getValue());
+		//System.out.println("InvalidArg: " + StreamUtils.parseInt(buffer, 4).getValue());
 	}
 
 }

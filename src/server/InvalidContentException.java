@@ -2,7 +2,14 @@ package server;
 
 @SuppressWarnings("serial")
 public class InvalidContentException extends Exception {
-	public InvalidContentException(String errorMessage) {
-		super(errorMessage);
+	private int index;
+	
+	public InvalidContentException(int index) {
+		super("");
+		this.index = index;
+	}
+	
+	public int getIndex() {
+		return index;
 	}
 }

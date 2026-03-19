@@ -15,38 +15,41 @@ public class Router<T> {
 		routingMap = buildMap();
 	}
 	
-	// In content, if value == Int, then it is just (int), if it is string, it is: (int-length)(utf-8-string-content)
-	public void route(int code, int[] sizes, byte[] content) throws NotFoundException, InvalidContentException {
+	public void route(MessageContext context, int code, int[] sizes, byte[] content) throws NotFoundException, InvalidContentException {
 		Method controllerRoute = routingMap.getOrDefault(code, null);
 		if(controllerRoute == null)
 			throw new NotFoundException("Expected route definiton (" + code + ").");
 		
 		Object[] paramValues = new Object[controllerRoute.getParameterCount()]; 
+
 		int index = 0;
+		int sizeIndex = 0;
 		int offset = 0;
 		for(Parameter param : controllerRoute.getParameters()) {
 			
 			if(offset >= content.length)
-				throw new InvalidContentException("Content ended early at offset " + offset + ".");
+				throw new InvalidContentException(sizeIndex);
 			
-			if(param.getType() == int.class) {
+			if(param.getType() == MessageContext.class) {
+				paramValues[index] = context;
+				index++;
+				continue;
+			} else if(param.getType() == int.class) {
 				paramValues[index] = decodeInt(content, offset);
 
 			} else if (param.getType() == String.class) {
-
-				
-				System.out.println(decodeString(content, offset, sizes[index]));
-				paramValues[index] = decodeString(content, offset, sizes[index]);
+				paramValues[index] = decodeString(content, offset, sizes[sizeIndex]);
 			}
 			
-			offset += sizes[index];
+			offset += sizes[sizeIndex];
 			index++;
+			sizeIndex++;
 		}
 		
 		try {
 			controllerRoute.invoke(controller, paramValues);
 		} catch (Exception ex) {
-			throw new InvalidContentException("Unexpectedly failed to invoke controller route.");
+			throw new InvalidContentException(-1);
 		}
 	}
 	
@@ -63,9 +66,17 @@ public class Router<T> {
 				}
 				
 				Parameter[] parameters = method.getParameters();
+				boolean foundContext = false;
 				for(Parameter param : parameters) {
-					if(int.class != param.getType() && String.class != param.getType()) {
-						throw new InvalidRouteException("Route definition parameters may contain only int and String types.");
+					if(MessageContext.class == param.getType()) {
+						if(foundContext) {
+							throw new InvalidRouteException("Route definition cannot contain duplicate parameters with type MessageContext.");
+						}
+						
+						foundContext = true;
+					}
+					if(MessageContext.class != param.getType() && int.class != param.getType() && String.class != param.getType()) {
+						throw new InvalidRouteException("Route definition parameters may contain only MessageContext, int and String types.");
 					}
 				}
 				
