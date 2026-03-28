@@ -6,11 +6,14 @@ import java.io.OutputStream;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 
 import common.HeaderParseResult;
 import common.MessageBuilder;
+import common.MessageDefs;
 import common.ParseResult;
 import common.StreamUtils;
+import common.models.TextMessage;
 
 public class Main {
 
@@ -24,10 +27,8 @@ public class Main {
 		System.out.println("Send 1");
 		
 		MessageBuilder builder = new MessageBuilder();
-		builder.setCode(1);
-		builder.appendContentInt(11);
-		builder.appendContentString("Hello World!");
-		
+		builder.setAsTextMessage(new TextMessage(MessageDefs.BROADCAST, 11, LocalDateTime.now(), "Hello World!"));
+
 		out.write(builder.build());
 		
 		InputStream in = s.getInputStream();
@@ -35,9 +36,11 @@ public class Main {
 		HeaderParseResult headerResult = StreamUtils.readHeader(in);
 		
 		byte[] buffer = new byte[1024];
-		in.read(buffer);
+		StreamUtils.read(buffer, in, 0, headerResult.getValue().getContentSize());
 		
 		System.out.println("ReplyCode:" + headerResult.getValue().getCode());
+		
+		
 		
 		//System.out.println("ErrorDef: " + StreamUtils.parseInt(buffer, 0).getValue());
 		//System.out.println("InvalidArg: " + StreamUtils.parseInt(buffer, 4).getValue());

@@ -2,15 +2,15 @@ package server;
 
 import java.io.*;
 import java.net.*;
-
-
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import common.MessageBuilder;
+import common.MessageDefs;
 import common.MessageHeader;
-import server.client.Client;
+import common.models.TextMessage;
 
 
 // Owner of host socket and all Client socket connections
@@ -19,6 +19,7 @@ public class Server {
 	private List<Client> clients = Collections.synchronizedList(new ArrayList<Client>());
 	private boolean closed = false;
 	
+	private MessageRepository repository;
 	private Controller controller;
 	private Router<Controller> router;
 	
@@ -28,7 +29,13 @@ public class Server {
 	public Server(int port) throws IOException, InvalidRouteException {
 		socket = new ServerSocket(port);
 		
-		controller = new Controller();
+		repository = new MessageRepository();
+		// TODO: test data
+		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 11, LocalDateTime.now(), "Hello1."));
+		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 12, LocalDateTime.now(), "Hello2."));
+		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 13, LocalDateTime.now(), "Hello3."));
+		
+		controller = new Controller(repository);
 		router = new Router<Controller>(controller);
 		
 		acceptThread = new Thread(() -> acceptAll());

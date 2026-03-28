@@ -52,7 +52,7 @@ public class MessageHeader {
 		return Integer.BYTES * (sizes.length + 3);
 	}
 	
-	public int getTotalSize() {
+	public int getContentSize() {
 		return total;
 	}
 }

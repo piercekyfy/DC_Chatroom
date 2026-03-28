@@ -1,9 +1,12 @@
 package common;
 
 import java.nio.ByteBuffer;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.CRC32;
+
+import common.models.TextMessage;
 
 public class MessageBuilder {
 	private int code = MessageDefs.INVALID;
@@ -60,7 +63,7 @@ public class MessageBuilder {
 	public byte[] build() {
 		MessageHeader header = buildHeader();
 		
-		ByteBuffer buffer = ByteBuffer.allocate(header.getSize() + header.getTotalSize());
+		ByteBuffer buffer = ByteBuffer.allocate(header.getSize() + header.getContentSize());
 		
 		buffer.putInt(header.getCode());
 		buffer.putInt(header.getSizes().length);
@@ -76,6 +79,15 @@ public class MessageBuilder {
 	}
 	
 	// Pre-defined messages
+	
+	public MessageBuilder setAsTextMessage(TextMessage message) {
+		reset();
+		setCode(message.getCode());
+		appendContentInt(message.getSenderId());
+		appendContentString(StreamUtils.formatDatetime(message.getTimestamp()));
+		appendContentString(message.getContent());
+		return this;
+	}
 	
 	public MessageBuilder setAsInvalidHeaderArg(int argIndex) {
 		reset();

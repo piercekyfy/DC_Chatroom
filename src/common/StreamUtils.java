@@ -2,8 +2,11 @@ package common;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.SocketTimeoutException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class StreamUtils {
 	
@@ -50,7 +53,10 @@ public class StreamUtils {
 	}
 	
 	public static ParseResult<Integer> readInt(byte[] buffer, InputStream in, int offset) throws IOException {
-		StreamUtils.read(buffer, in, offset, Integer.BYTES);
+		boolean success = StreamUtils.read(buffer, in, offset, Integer.BYTES);
+		
+		if(!success)
+			return new ParseResult<Integer>(false, 0);
 		
 		return parseInt(buffer, offset);
 	}
@@ -65,16 +71,30 @@ public class StreamUtils {
 		}
 	}
 	
-	public static void read(byte[] buffer, InputStream in, int offset, int length) throws IOException {
+	public static boolean read(byte[] buffer, InputStream in, int offset, int length) throws IOException {
 		int read = 0;
-
-		while(read < length) {
-			int lastRead = in.read(buffer, offset + read, length - read);
-			
-			if(lastRead == -1)
-				throw new IOException("Stream was unexpectedly closed.");
-			
-			read += lastRead;
+		
+		try {
+			while(read < length) {
+				int lastRead = in.read(buffer, offset + read, length - read);
+				
+				if(lastRead == -1)
+					throw new IOException("Stream was unexpectedly closed.");
+				
+				read += lastRead;
+			}
+		} catch (SocketTimeoutException ex) {
+			return false;
 		}
+		
+		return true;
+	}
+	
+	public static String formatDatetime(LocalDateTime dateTime) {
+		return dateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+	}
+	
+	public static LocalDateTime dateTimeFromString(String str) {
+		return LocalDateTime.parse(str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 	}
 }

@@ -1,7 +1,5 @@
 package server;
 
-import server.client.Client;
-
 public class MessageContext {
 	private Client source;
 	
