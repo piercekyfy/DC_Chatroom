@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import common.ErrorDefs;
 import common.MessageBuilder;
 import common.MessageDefs;
 import common.MessageHeader;
-import common.models.TextMessage;
+import common.models.messages.AnyErrorMessage;
+import common.models.messages.TextMessage;
 
 
 // Owner of host socket and all Client socket connections
@@ -56,10 +58,13 @@ public class Server {
 		try {
 			router.route(context, header.getCode(), header.getSizes(), content);
 		} catch (NotFoundException ex) {
-			requester.sendMessage(new MessageBuilder().setAsInvalidHeaderArg(0)); // code
+			
+			
+			requester.sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, header.getCode()).serialize());
 			requester.close();
 		} catch (InvalidContentException ex) {
-			requester.sendMessage(new MessageBuilder().setAsInvalidContent(ex.getIndex()));
+			// TODO: ex.getIndex()
+			requester.sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, header.getCode()).serialize());
 			requester.close();
 		}
 	}

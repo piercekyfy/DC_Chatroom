@@ -1,11 +1,10 @@
-package common.models;
+package common.models.messages;
 
 
 import common.MessageBuilder;
 
 
 public abstract class ErrorMessage<E extends ErrorMessage<E>> extends Message<E>  {
-	protected int code;
 	protected int subCode;
 	protected int sourceCode;
 	
@@ -29,12 +28,6 @@ public abstract class ErrorMessage<E extends ErrorMessage<E>> extends Message<E>
 				.appendContentInt(sourceCode);
 	}
 	
-	public int getCode() {
-		return code;
-	}
-	public void setCode(int code) {
-		this.code = code;
-	}
 	public int getSubCode() {
 		return subCode;
 	}

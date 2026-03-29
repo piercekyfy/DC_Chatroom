@@ -88,6 +88,7 @@ public class Router<T> {
 		return map;
 	}
 	
+	// TODO: replace with common parse methods
 	private int decodeInt(byte[] bytes, int offset) {
 		return ByteBuffer.wrap(bytes, offset, Integer.BYTES).getInt();
 	}

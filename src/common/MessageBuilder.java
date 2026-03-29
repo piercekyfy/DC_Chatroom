@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.CRC32;
 
-import common.models.TextMessage;
+import common.models.messages.TextMessage;
 
 public class MessageBuilder {
 	private int code = MessageDefs.INVALID;
@@ -79,15 +79,6 @@ public class MessageBuilder {
 	}
 	
 	// Pre-defined messages
-	
-	public MessageBuilder setAsTextMessage(TextMessage message) {
-		reset();
-		setCode(message.getCode());
-		appendContentInt(message.getSenderId());
-		appendContentString(StreamUtils.formatDatetime(message.getTimestamp()));
-		appendContentString(message.getContent());
-		return this;
-	}
 	
 	public MessageBuilder setAsInvalidHeaderArg(int argIndex) {
 		reset();

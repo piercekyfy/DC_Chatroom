@@ -13,6 +13,7 @@ import server.Server;
 
 public class MessageBus {
 	private Socket socket;
+	private boolean error = false;
 
 	private Queue<MessageBuilder> sendQueue = new ArrayDeque<MessageBuilder>();
 	
@@ -22,6 +23,7 @@ public class MessageBus {
 		this.socket = socket;
 	}
 	
+
 	public void sendMessage(MessageBuilder builder) {
 		sendQueue.add(builder);
 	}
@@ -29,6 +31,17 @@ public class MessageBus {
 	public void register(MessageTask<?> task) {
 		sendMessage(task.getMessage().serialize());
 		waitingTasks.add(task);
+	}
+	
+	public void handle() { // TODO: loop in thread
+		if(!sendQueue.isEmpty())
+			handleWrite();
+		else 
+			handleRead();
+	}
+	
+	public boolean hasError() {
+		return error;
 	}
 	
 	private void onMessage(MessageHeader header, byte[] content) {
@@ -39,13 +52,6 @@ public class MessageBus {
 				break;
 			}
 		}
-	}
-	
-	public void handle() { // TODO: loop in thread
-		if(!sendQueue.isEmpty())
-			handleWrite();
-		else 
-			handleRead();
 	}
 	
 	private void handleWrite() {
@@ -62,7 +68,7 @@ public class MessageBus {
 			
 		} catch (Exception ex) {
 			System.out.println(ex.getMessage());
-			//error = true;
+			error = true;
 		}
 	}
 	
@@ -78,6 +84,7 @@ public class MessageBus {
 				if(headerResult.getFailureArgIndex() == 0)
 					return;
 				else {
+					error = true;
 					// TODO: invalid header, but the server is never wrong!
 					return;
 				}
@@ -90,7 +97,7 @@ public class MessageBus {
 			}
 		} catch (Exception ex) {
 			System.out.println(ex.getMessage());
-			//error = true;
+			error = true;
 		}
 	}
 }

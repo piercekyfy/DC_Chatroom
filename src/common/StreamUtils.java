@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.SocketTimeoutException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -62,12 +63,21 @@ public class StreamUtils {
 	}
 	
 	// TODO: refactor this to just 'parse int from buffer'
-	public static ParseResult<Integer> parseInt(byte[] buffer, int offset) throws IOException {
+	public static ParseResult<Integer> parseInt(byte[] buffer, int offset) {
 		try {
 			int value = ByteBuffer.wrap(buffer, offset, Integer.BYTES).getInt();
 			return new ParseResult<Integer>(true, value);
 		} catch (BufferUnderflowException ex) {
 			return new ParseResult<Integer>(false, 0);
+		}
+	}
+	
+	public static ParseResult<String> parseString(byte[] buffer, int offset, int length) {
+		try {
+			String value = StandardCharsets.UTF_8.decode(ByteBuffer.wrap(buffer, offset, length)).toString();
+			return new ParseResult<String>(true, value);
+		} catch (BufferUnderflowException ex) {
+			return new ParseResult<String>(false, null);
 		}
 	}
 	
@@ -95,6 +105,6 @@ public class StreamUtils {
 	}
 	
 	public static LocalDateTime dateTimeFromString(String str) {
-		return LocalDateTime.parse(str, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+		return LocalDateTime.parse(str.trim(), DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 	}
 }

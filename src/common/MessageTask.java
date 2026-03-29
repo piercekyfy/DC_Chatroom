@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import common.models.AnyErrorMessage;
-import common.models.ErrorMessage;
-import common.models.Message;
+import common.models.messages.AnyErrorMessage;
+import common.models.messages.ErrorMessage;
+import common.models.messages.Message;
 
 public class MessageTask<T extends Message<T>> {
 	private class MessageHandler<M extends Message<M>> {
@@ -26,7 +26,7 @@ public class MessageTask<T extends Message<T>> {
 	}
 	
 	private int expectCode = MessageDefs.INVALID;
-	private MessageHandler<T> expectHandler = null;
+	private MessageHandler<?> expectHandler = null;
 	private Map<Integer, MessageHandler<?>> errorHandlers = new HashMap<>();
 	private Consumer<Exception> exceptionEvent = null;
 	
@@ -42,7 +42,7 @@ public class MessageTask<T extends Message<T>> {
 		else if (errorHandlers.containsKey(header.getCode())) {
 			try {
 				AnyErrorMessage error = AnyErrorMessage.from(header, content);
-				if(expectCode == error.getSourceCode())
+				if(outgoing.getCode()  == error.getSourceCode())
 					return true;
 			} catch (Exception e) {
 				// fail quietly here (and hope it'll fail loudly if it is ever handled?)
@@ -60,9 +60,9 @@ public class MessageTask<T extends Message<T>> {
 		// exception?
 	}
 	
-	public MessageTask<T> expect(int code, BiFunction<MessageHeader, ByteBuffer, T> deserializer,  Consumer<T> callback) {
+	public <M extends Message<M>> MessageTask<T> expect(int code, BiFunction<MessageHeader, ByteBuffer, M> deserializer,  Consumer<M> callback) {
 		expectCode = code;
-		expectHandler = new MessageHandler<>(deserializer, callback);
+		expectHandler = new MessageHandler<M>(deserializer, callback);
 		return this;
 	}
 	

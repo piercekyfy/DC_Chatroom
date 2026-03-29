@@ -7,11 +7,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
+import common.ErrorDefs;
 import common.HeaderParseResult;
 import common.MessageBuilder;
+import common.MessageDefs;
 import common.MessageHeader;
 import common.ParseResult;
 import common.StreamUtils;
+import common.models.messages.AnyErrorMessage;
 
 import java.io.*;
 
@@ -101,8 +104,9 @@ public class Client {  // TODO: timeouts
 				if(headerResult.getFailureArgIndex() == 0)
 					return;
 				else {
-					error = true;
-					sendMessage(new MessageBuilder().setAsInvalidHeaderArg(headerResult.getFailureArgIndex()));
+					error = true; // TODO: new way of erroring
+					// Unrecoverable error (specifies no source)
+					sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, -1).serialize());
 					return;
 				}
 			} else {

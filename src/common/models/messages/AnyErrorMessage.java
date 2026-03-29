@@ -1,4 +1,4 @@
-package common.models;
+package common.models.messages;
 
 import java.nio.ByteBuffer;
 

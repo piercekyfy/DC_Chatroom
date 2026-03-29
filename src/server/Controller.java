@@ -3,12 +3,14 @@ package server;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import common.ErrorDefs;
 import common.MessageBuilder;
 import common.MessageDefs;
 import common.StreamUtils;
 import common.models.DownloadResponsePreamble;
-import common.models.TextMessage;
 import common.models.User;
+import common.models.messages.AnyErrorMessage;
+import common.models.messages.TextMessage;
 
 public class Controller {
 	
@@ -25,8 +27,8 @@ public class Controller {
 		System.out.println(context.getSource() + " receieved Message from " + senderId + " at " + dateTime + " with content: " + content);
 	
 		repository.putOne(new TextMessage(MessageDefs.BROADCAST, senderId, dateTime, content));
-		
-		context.getSource().sendMessage(new MessageBuilder().setCode(MessageDefs.RESPONSE_SUCCESS).appendContentString("blah"));
+
+		context.getSource().sendMessage(new TextMessage(MessageDefs.RESPONSE_SUCCESS, -1, LocalDateTime.now(), "Send!").serialize());
 	}
 	
 	@Route(code = MessageDefs.DOWNLOAD_MESSAGE)
@@ -38,7 +40,7 @@ public class Controller {
 		context.getSource().sendMessage(DownloadResponsePreamble.GetBuilder(new DownloadResponsePreamble(messages.size())));
 		
 		for(TextMessage message : messages) {
-			context.getSource().sendMessage(TextMessage.GetBuilder(message));
+			context.getSource().sendMessage(message.serialize());
 		}
 	}
 }

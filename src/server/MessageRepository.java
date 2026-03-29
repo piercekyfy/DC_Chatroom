@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import common.models.TextMessage;
+import common.models.messages.TextMessage;
 
 public class MessageRepository {
 	List<TextMessage> messages = Collections.synchronizedList(new ArrayList<TextMessage>());
