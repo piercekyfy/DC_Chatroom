@@ -8,7 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import common.ErrorDefs;
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 import common.MessageHeader;
 import common.models.messages.AnyErrorMessage;

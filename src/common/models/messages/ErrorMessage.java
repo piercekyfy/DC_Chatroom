@@ -1,7 +1,7 @@
 package common.models.messages;
 
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 
 
 public abstract class ErrorMessage<E extends ErrorMessage<E>> extends Message<E>  {
@@ -15,14 +15,14 @@ public abstract class ErrorMessage<E extends ErrorMessage<E>> extends Message<E>
 	 * @param sourceCode The original request's code, e.g. BROADCAST (1).
 	 */
 	public ErrorMessage(int code, int subCode, int sourceCode) {
-		this.code = code;
+		super(code);
 		this.subCode = subCode;
 		this.sourceCode = sourceCode;
 	}
 	
 	@Override
-	public MessageBuilder serialize() {
-		return new MessageBuilder()
+	public MessageSerializer serialize() {
+		return new MessageSerializer()
 				.setCode(code)
 				.appendContentInt(subCode)
 				.appendContentInt(sourceCode);

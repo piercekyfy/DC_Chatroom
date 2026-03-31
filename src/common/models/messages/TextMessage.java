@@ -3,8 +3,9 @@ package common.models.messages;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
+import common.MessageDeserializer;
 import common.MessageHeader;
 import common.StreamUtils;
 
@@ -14,7 +15,7 @@ public class TextMessage extends Message<TextMessage> {
 	private String content = "";
 	
 	public TextMessage(int code, int senderId, LocalDateTime timestamp, String content) {
-		this.code = code;
+		super(code);
 		this.senderId = senderId;
 		this.timestamp = timestamp;
 		this.content = content;
@@ -41,8 +42,8 @@ public class TextMessage extends Message<TextMessage> {
 	}
 
 	@Override
-	public MessageBuilder serialize() {
-		return new MessageBuilder()
+	public MessageSerializer serialize() {
+		return new MessageSerializer()
 				.setCode(code)
 				.appendContentInt(senderId)
 				.appendContentString(StreamUtils.formatDatetime(timestamp))
@@ -50,16 +51,7 @@ public class TextMessage extends Message<TextMessage> {
 	}
 	
 	public static TextMessage from(MessageHeader header, ByteBuffer content) {
-		
-		int code = header.getCode();
-		int sender = content.getInt(); // size 0
-		byte[] timestampBytes = new byte[header.getSizes()[1]];
-		byte[] contentBytes = new byte[header.getSizes()[2]];
-		content.get(timestampBytes);
-		content.get(contentBytes);
-		LocalDateTime timestamp = StreamUtils.dateTimeFromString(StreamUtils.parseString(timestampBytes, 0, timestampBytes.length).getValue());
-		String text = StreamUtils.parseString(contentBytes, 0, contentBytes.length).getValue();
-		
-		return new TextMessage(code, sender, timestamp, text);
+		MessageDeserializer msg = MessageDeserializer.fromHeader(header).setBytes(content.array());
+		return new TextMessage(header.getCode(), msg.getIntegerAt(0), msg.getDateTimeAt(1), msg.getStringAt(2));
 	}
 }

@@ -2,7 +2,7 @@ package common.models;
 
 import java.time.LocalDateTime;
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 import common.StreamUtils;
 
@@ -21,8 +21,8 @@ public class NewMessageMessage {
 		this.content = content;
 	}
 	
-	public static MessageBuilder GetBuilder(NewMessageMessage message) {
-		return new MessageBuilder()
+	public static MessageSerializer GetBuilder(NewMessageMessage message) {
+		return new MessageSerializer()
 				.setCode(MessageDefs.NEW_MESSAGE)
 				.appendContentInt(message.getSenderId())
 				.appendContentString(StreamUtils.formatDatetime(message.getTimestamp()))

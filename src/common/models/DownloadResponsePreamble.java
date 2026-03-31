@@ -1,6 +1,6 @@
 package common.models;
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 
 public class DownloadResponsePreamble {
@@ -10,8 +10,8 @@ public class DownloadResponsePreamble {
 		this.count = count;
 	}
 	
-	public static MessageBuilder GetBuilder(DownloadResponsePreamble message) {
-		return new MessageBuilder()
+	public static MessageSerializer GetBuilder(DownloadResponsePreamble message) {
+		return new MessageSerializer()
 				.setCode(MessageDefs.DOWNLOAD_MESSAGE_RESPONSE_PREAMBLE)
 				.appendContentInt(message.count);
 	}

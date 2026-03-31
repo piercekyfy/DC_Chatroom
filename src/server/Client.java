@@ -9,7 +9,7 @@ import java.util.Queue;
 
 import common.ErrorDefs;
 import common.HeaderParseResult;
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 import common.MessageHeader;
 import common.ParseResult;
@@ -23,7 +23,7 @@ public class Client {  // TODO: timeouts
 	private Socket socket;
 	private boolean error = false;
 
-	private Queue<MessageBuilder> sendQueue = new ArrayDeque<MessageBuilder>();
+	private Queue<MessageSerializer> sendQueue = new ArrayDeque<MessageSerializer>();
 
 	public Client(Socket socket) throws SocketException {
 		this.socket = socket;
@@ -44,7 +44,7 @@ public class Client {  // TODO: timeouts
 		} catch (IOException ex) { }
 	}
 	
-	public void sendMessage(MessageBuilder builder) {
+	public void sendMessage(MessageSerializer builder) {
 		// TODO: builder-side validation
 		
 		sendQueue.add(builder);
@@ -80,7 +80,7 @@ public class Client {  // TODO: timeouts
 		try {
 			out = socket.getOutputStream();
 			
-			MessageBuilder message = sendQueue.poll();
+			MessageSerializer message = sendQueue.poll();
 			
 			byte[] messageBytes = message.build();
 			

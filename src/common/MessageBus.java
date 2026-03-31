@@ -1,5 +1,6 @@
 package common;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -15,7 +16,7 @@ public class MessageBus {
 	private Socket socket;
 	private boolean error = false;
 
-	private Queue<MessageBuilder> sendQueue = new ArrayDeque<MessageBuilder>();
+	private Queue<MessageSerializer> sendQueue = new ArrayDeque<MessageSerializer>();
 	
 	private List<MessageTask<?>> waitingTasks = new ArrayList<>();
 	
@@ -24,7 +25,7 @@ public class MessageBus {
 	}
 	
 
-	public void sendMessage(MessageBuilder builder) {
+	public void sendMessage(MessageSerializer builder) {
 		sendQueue.add(builder);
 	}
 
@@ -33,7 +34,13 @@ public class MessageBus {
 		waitingTasks.add(task);
 	}
 	
-	public void handle() { // TODO: loop in thread
+	public void close() {
+		try {
+			socket.close();
+		} catch (IOException ex) {}
+	}
+	
+	public void handle() { // TODO: loop in thread	
 		if(!sendQueue.isEmpty())
 			handleWrite();
 		else 
@@ -60,7 +67,7 @@ public class MessageBus {
 		try {
 			out = socket.getOutputStream();
 			
-			MessageBuilder message = sendQueue.poll();
+			MessageSerializer message = sendQueue.poll();
 			
 			byte[] messageBytes = message.build();
 			

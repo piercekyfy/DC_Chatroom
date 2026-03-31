@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import common.ErrorDefs;
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 import common.StreamUtils;
 import common.models.DownloadResponsePreamble;

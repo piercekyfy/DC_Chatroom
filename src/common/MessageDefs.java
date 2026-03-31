@@ -10,4 +10,9 @@ public class MessageDefs {
 	public static final int DOWNLOAD_MESSAGE_RESPONSE_PREAMBLE = 898;
 	public static final int NEW_MESSAGE = 899;
 	public static final int GENERIC_ERROR = 999;
+	
+	// Login
+	public static final int LOGIN_REQUEST = 20;
+	public static final int LOGIN_RESPONSE = 21;
+	public static final int INVALID_LOGIN_ERROR = 22;
 }

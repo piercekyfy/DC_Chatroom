@@ -2,7 +2,7 @@ package common.models.messages;
 
 import java.nio.ByteBuffer;
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageHeader;
 
 public class AnyErrorMessage extends ErrorMessage<AnyErrorMessage>  {

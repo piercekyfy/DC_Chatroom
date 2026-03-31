@@ -1,6 +1,6 @@
 package common.models;
 
-import common.MessageBuilder;
+import common.MessageSerializer;
 import common.MessageDefs;
 
 public class DownloadRequestMessage {
@@ -10,8 +10,8 @@ public class DownloadRequestMessage {
 		this.count = count;
 	}
 	
-	public static MessageBuilder GetBuilder(DownloadRequestMessage message) {
-		return new MessageBuilder()
+	public static MessageSerializer GetBuilder(DownloadRequestMessage message) {
+		return new MessageSerializer()
 				.setCode(MessageDefs.DOWNLOAD_MESSAGE)
 				.appendContentInt(message.count);
 	}

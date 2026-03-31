@@ -8,7 +8,7 @@ import java.util.zip.CRC32;
 
 import common.models.messages.TextMessage;
 
-public class MessageBuilder {
+public class MessageSerializer {
 	private int code = MessageDefs.INVALID;
 	private List<MessageContentElement> content = new ArrayList<MessageContentElement>();
 	
@@ -17,27 +17,27 @@ public class MessageBuilder {
 		content = new ArrayList<MessageContentElement>();
 	}
 	
-	public MessageBuilder setCode(int code) {
+	public MessageSerializer setCode(int code) {
 		this.code = code;
 		return this;
 	}
 	
-	public MessageBuilder appendContentInt(int value) {
+	public MessageSerializer appendContentInt(int value) {
 		content.add(new MessageContentElement(value));
 		return this;
 	}
 	
-	public MessageBuilder setContentInt(int index, int value) {
+	public MessageSerializer setContentInt(int index, int value) {
 		content.set(index, new MessageContentElement(value));
 		return this;
 	}
 	
-	public MessageBuilder appendContentString(String value) {
+	public MessageSerializer appendContentString(String value) {
 		content.add(new MessageContentElement(value));
 		return this;
 	}
 	
-	public MessageBuilder setContentString(int index, String value) {
+	public MessageSerializer setContentString(int index, String value) {
 		content.set(index, new MessageContentElement(value));
 		return this;
 	}
@@ -80,7 +80,7 @@ public class MessageBuilder {
 	
 	// Pre-defined messages
 	
-	public MessageBuilder setAsInvalidHeaderArg(int argIndex) {
+	public MessageSerializer setAsInvalidHeaderArg(int argIndex) {
 		reset();
 		setCode(MessageDefs.INVALID_HEADER_ERROR);
 		appendContentInt(ErrorDefs.INVALID_OR_MISSING_ARG);
@@ -88,7 +88,7 @@ public class MessageBuilder {
 		return this;
 	}
 	
-	public MessageBuilder setAsInvalidContent(int index) {
+	public MessageSerializer setAsInvalidContent(int index) {
 		reset();
 		setCode(MessageDefs.INVALID_CONTENT_ERROR);
 		appendContentInt(index);
