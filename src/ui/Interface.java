@@ -13,6 +13,7 @@ import javax.swing.*;
 import common.ui.UIMessage;
 import common.ui.UIMessageContent;
 import common.ui.UIMessageType;
+import common.ui.UIUser;
 
 public class Interface {
 	private JFrame rootFrame;
@@ -97,7 +98,7 @@ public class Interface {
 		
 		rootFrame.add(bottomPanel, BorderLayout.SOUTH);
 		
-		append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Waiting...")));
+		appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Waiting...")));
 	}
 	
 	public void registerOnToggleStart(Consumer<String> callback) {
@@ -115,8 +116,15 @@ public class Interface {
 		topPanel.revalidate();
 	}
 
-	public void append(UIMessage message) {
+	public void appendUser(UIUser user) {
+		userScrollPanel.add(user.getRoot());
+		userScrollPanel.revalidate();
+		userScrollPanel.repaint();
+	}
+	
+	public void appendMessage(UIMessage message) {
 		messageScrollPanel.add(message.getRoot());
+		messageScrollPanel.revalidate();
 		messageScrollPanel.repaint();
 	}
 	

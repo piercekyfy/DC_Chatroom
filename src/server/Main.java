@@ -3,11 +3,14 @@ package server;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
+import javax.swing.SwingUtilities;
+
 import common.MessageDefs;
 import common.models.messages.TextMessage;
 import common.ui.UIMessage;
 import common.ui.UIMessageContent;
 import common.ui.UIMessageType;
+import common.ui.UIUser;
 import ui.Interface;
 
 public class Main {
@@ -26,13 +29,13 @@ public class Main {
 			controller = new Controller(messageRepository, userRepository);
 			server = new Server(port, controller);
 			ui.setStarted(true);
-			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Started at port:" + port)));	
+			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Started at port:" + port)));	
 		} catch (IOException ex) {
 			ui.setStarted(false);
-			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to start server: " + ex.getMessage())));
+			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to start server: " + ex.getMessage())));
 		} catch (InvalidRouteException ex) {
 			ui.setStarted(false);
-			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to configure routes for specified controller.")));
+			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to configure routes for specified controller.")));
 		} 
 	}
 	
@@ -40,7 +43,7 @@ public class Main {
 		server.close();
 		server = null;
 		ui.setStarted(false);
-		ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Stopped...")));	
+		ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Stopped...")));	
 	}
 	
 	public static void main(String[] args) {
@@ -59,10 +62,16 @@ public class Main {
 				else
 					stop();
 			} catch(Exception ex) {
-				ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Unexpected error in start-up callback.")));
+				ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Unexpected error in start-up callback.")));
 				server.close();
 				server = null;
 			}
+		});
+		
+		userRepository.registerOnSessionCreated((user) -> {
+			SwingUtilities.invokeLater(() -> {
+				ui.appendUser(new UIUser(user.getUsername(), user.getSessionId()));
+			});
 		});
 		
 		ui.setVisible(true);
