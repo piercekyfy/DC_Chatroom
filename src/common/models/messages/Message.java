@@ -16,10 +16,9 @@ public abstract class Message<T extends Message<T>>  {
 	}
 	
 	public abstract MessageSerializer serialize();
-	public MessageTask<T> send(MessageBus bus) {
-		MessageTask<T> task = new MessageTask<T>(this);
-		bus.register(task);
-		return task;
+	
+	public MessageTask<T> asTask() {
+		return new MessageTask<T>(this);
 	}
 	
 	public int getCode() {

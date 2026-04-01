@@ -46,9 +46,10 @@ public class MessageDeserializer {
 	
 	private int getOffsetTo(int index) {
 		int offset = 0;
-		for(int size : sizes) {
-			offset += size;
+		for(int i = 0; i < index; i++) {
+			offset += sizes.get(i);
 		}
+
 		return offset;
 	}
 	

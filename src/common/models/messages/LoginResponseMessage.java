@@ -3,12 +3,12 @@ package common.models.messages;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 
-import common.LoginSession;
 import common.MessageSerializer;
 import common.MessageDefs;
 import common.MessageDeserializer;
 import common.MessageHeader;
 import common.StreamUtils;
+import common.models.UserSession;
 
 public class LoginResponseMessage extends Message<LoginResponseMessage> {	
 	private int sessionId;

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,15 +24,18 @@ public class MessageBus {
 	public MessageBus(Socket socket) {
 		this.socket = socket;
 	}
-	
 
 	public void sendMessage(MessageSerializer builder) {
-		sendQueue.add(builder);
+		synchronized(sendQueue) {
+			sendQueue.add(builder);
+		}
 	}
 
 	public void register(MessageTask<?> task) {
+		synchronized(waitingTasks) {
+			waitingTasks.add(task);
+		}
 		sendMessage(task.getMessage().serialize());
-		waitingTasks.add(task);
 	}
 	
 	public void close() {
@@ -40,7 +44,7 @@ public class MessageBus {
 		} catch (IOException ex) {}
 	}
 	
-	public void handle() { // TODO: loop in thread	
+	public void handle() {
 		if(!sendQueue.isEmpty())
 			handleWrite();
 		else 
@@ -52,28 +56,34 @@ public class MessageBus {
 	}
 	
 	private void onMessage(MessageHeader header, byte[] content) {
-		for(MessageTask<?> task : waitingTasks) {
-			if(task.doesExpect(header, ByteBuffer.wrap(content, 0, header.getContentSize()))) {
-				task.handleMessage(header, ByteBuffer.wrap(content, 0, header.getContentSize()));
-				waitingTasks.remove(task);
-				break;
+		synchronized(waitingTasks) {
+			for(MessageTask<?> task : waitingTasks) {
+				if(task.doesExpect(header, ByteBuffer.wrap(content, 0, header.getContentSize()))) {
+					task.handleMessage(header, ByteBuffer.wrap(content, 0, header.getContentSize()));
+					waitingTasks.remove(task);
+					break;
+				}
 			}
 		}
 	}
 	
 	private void handleWrite() {
 		OutputStream out = null;
+		MessageSerializer message;
 		
 		try {
 			out = socket.getOutputStream();
 			
-			MessageSerializer message = sendQueue.poll();
+			synchronized(sendQueue) {
+				if(sendQueue.isEmpty()) return;
+				message = sendQueue.poll();
+			}
 			
 			byte[] messageBytes = message.build();
 			
 			out.write(messageBytes);
 			
-		} catch (Exception ex) {
+		} catch (IOException ex) {
 			System.out.println(ex.getMessage());
 			error = true;
 		}
@@ -84,7 +94,7 @@ public class MessageBus {
 			
 		try {
 			in = socket.getInputStream();
-		
+			
 			HeaderParseResult headerResult = StreamUtils.readHeader(in);
 			
 			if(!headerResult.isSuccess()) {
@@ -102,7 +112,8 @@ public class MessageBus {
 				
 				onMessage(headerResult.getValue(), buffer);
 			}
-		} catch (Exception ex) {
+		} catch (SocketTimeoutException ex) {}
+		catch (IOException ex) {
 			System.out.println(ex.getMessage());
 			error = true;
 		}

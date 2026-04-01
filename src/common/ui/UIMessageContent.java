@@ -1,4 +1,4 @@
-package client.ui;
+package common.ui;
 
 public class UIMessageContent {
 	private String username;

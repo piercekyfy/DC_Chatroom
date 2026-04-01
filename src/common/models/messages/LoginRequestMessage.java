@@ -3,11 +3,11 @@ package common.models.messages;
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 
-import common.LoginSession;
 import common.MessageSerializer;
 import common.MessageDefs;
 import common.MessageHeader;
 import common.StreamUtils;
+import common.models.UserSession;
 
 public class LoginRequestMessage extends Message<LoginRequestMessage> {	
 	private String username;
@@ -25,7 +25,7 @@ public class LoginRequestMessage extends Message<LoginRequestMessage> {
 		super(MessageDefs.LOGIN_REQUEST);
 		this.username = username;
 		this.password = password;
-		this.sessionId = LoginSession.NO_SESSION_ID;
+		this.sessionId = UserSession.NO_SESSION_ID;
 	}
 	
 	@Override

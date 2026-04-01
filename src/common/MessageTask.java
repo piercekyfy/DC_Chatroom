@@ -36,6 +36,10 @@ public class MessageTask<T extends Message<T>> {
 		this.outgoing = outgoing;
 	}
 	
+	public void send(MessageBus bus) {
+		bus.register(this);
+	}
+	
 	public boolean doesExpect(MessageHeader header, ByteBuffer content) {
 		if(header.getCode() == expectCode)
 			return true;

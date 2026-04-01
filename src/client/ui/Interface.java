@@ -9,6 +9,10 @@ import java.util.function.BiFunction;
 
 import javax.swing.*;
 
+import common.ui.UIMessage;
+import common.ui.UIMessageContent;
+import common.ui.UIMessageType;
+
 public class Interface {
 	private JFrame rootFrame;
 	private JPanel topPanel;
@@ -115,15 +119,9 @@ public class Interface {
 		topPanel.revalidate();
 	}
 	
-	private void uiInvoke(Runnable r) {
-		if(SwingUtilities.isEventDispatchThread())
-			r.run();
-		else
-			SwingUtilities.invokeLater(r);
-	}
-	
 	public void append(UIMessage message) {
 		mainScrollPanel.add(message.getRoot());
+		mainScrollPanel.revalidate();
 		mainScrollPanel.repaint();
 	}
 	

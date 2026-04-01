@@ -21,23 +21,15 @@ public class Server {
 	private List<Client> clients = Collections.synchronizedList(new ArrayList<Client>());
 	private boolean closed = false;
 	
-	private MessageRepository repository;
-	private Controller controller;
 	private Router<Controller> router;
 	
 	private Thread acceptThread;
 	private Thread handleThread;
 	
-	public Server(int port) throws IOException, InvalidRouteException {
+	public Server(int port, Controller controller) throws IOException, InvalidRouteException {
 		socket = new ServerSocket(port);
 		
-		repository = new MessageRepository();
-		// TODO: test data
-		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 11, LocalDateTime.now(), "Hello1."));
-		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 12, LocalDateTime.now(), "Hello2."));
-		repository.putOne(new TextMessage(MessageDefs.BROADCAST, 13, LocalDateTime.now(), "Hello3."));
-		
-		controller = new Controller(repository);
+
 		router = new Router<Controller>(controller);
 		
 		acceptThread = new Thread(() -> acceptAll());
@@ -47,9 +39,27 @@ public class Server {
 		handleThread.start();
 	}
 	
-	public void Join() throws InterruptedException {
-		acceptThread.join();
-		handleThread.join();
+	public boolean isClosed() {
+		return closed;
+	}
+	
+	public void close() {
+		closed = true;
+		
+		try {
+			if(socket != null)
+				socket.close();
+		} catch (IOException ex) {}
+		
+		try {
+			if(acceptThread != null)
+				acceptThread.join();
+		} catch(InterruptedException ex) {}
+		
+		try {
+			if(handleThread != null)
+				handleThread.join();
+		} catch(InterruptedException ex) {}
 	}
 	
 	public void RouteMessage(Client requester, MessageHeader header, byte[] content) throws NotFoundException, InvalidContentException {
@@ -71,44 +81,58 @@ public class Server {
 	
 	
 	private void handleAll() {
-		while(!closed) {
-			List<Client> toRemove = new ArrayList<Client>();
-			synchronized (clients) {
-				for(Client client : clients) {
-					
-					if(client.HasError()) {
-						System.out.println(client + " disconnected.");
-						toRemove.add(client);
-						continue;
+		try {
+			while(!closed) {
+				List<Client> toRemove = new ArrayList<Client>();
+				synchronized (clients) {
+					for(Client client : clients) {
+						
+						if(client.HasError()) {
+							System.out.println(client + " disconnected.");
+							toRemove.add(client);
+							continue;
+						}
+						
+						client.handle(this);
 					}
-					
-					client.handle(this);
+	
+					for(Client client : toRemove) {
+						client.close();
+						clients.remove(client);
+					}
 				}
-
-				for(Client client : toRemove) {
-					client.close();
-					clients.remove(client);
+				
+				try {
+					Thread.sleep(1);
+				} catch (InterruptedException ex) {
+				    Thread.currentThread().interrupt();
 				}
 			}
-			
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException ex) {
-			    Thread.currentThread().interrupt();
+		}
+		finally {
+			for(Client client : clients) {
+				client.close();
 			}
+			clients.clear();
 		}
 	}
 
 	private void acceptAll() {
 		while(!closed) {
+			Socket accepted = null;
 			try {
-				Socket accepted = socket.accept();
+				accepted = socket.accept();
+				accepted.setSoTimeout(100);
 				Client client = new Client(accepted);
-				System.out.println("Added client: " + client);
+
 				synchronized (clients) {
 					clients.add(client);
 				}
 			} catch(IOException ex) {
+				if(accepted != null)
+					try {
+						accepted.close();
+					} catch (IOException e) {}
 				continue;
 			}
 			

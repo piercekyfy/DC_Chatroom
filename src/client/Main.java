@@ -14,9 +14,6 @@ import javax.swing.SwingUtilities;
 
 import client.ui.Interface;
 import client.ui.LoginResult;
-import client.ui.UIMessage;
-import client.ui.UIMessageContent;
-import client.ui.UIMessageType;
 import common.ErrorDefs;
 import common.HeaderParseResult;
 import common.MessageSerializer;
@@ -24,10 +21,14 @@ import common.MessageBus;
 import common.MessageDefs;
 import common.ParseResult;
 import common.StreamUtils;
+import common.models.UserSession;
 import common.models.messages.AnyErrorMessage;
 import common.models.messages.LoginRequestMessage;
 import common.models.messages.LoginResponseMessage;
 import common.models.messages.TextMessage;
+import common.ui.UIMessage;
+import common.ui.UIMessageContent;
+import common.ui.UIMessageType;
 import server.Client;
 
 
@@ -36,7 +37,7 @@ public class Main {
 	private static Thread ioThread = null;
 	private static Interface ui = null;
 	private static MessageBus bus = null;
-	private static UserContext user = null;
+	private static UserSession user = null;
 	
 	private static void connect(String host, int port) throws IOException {
 		if(bus != null && bus.hasError() == false) {
@@ -45,6 +46,7 @@ public class Main {
 		
 		try {
 			Socket s = new Socket();
+			s.setSoTimeout(100);
 			s.connect(new InetSocketAddress(host, port), 5000);
 			bus = new MessageBus(s);
 			ui.setConnected(true);
@@ -52,7 +54,6 @@ public class Main {
 			ui.setConnected(false);
 			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to connect at " + host + ":" + port)));
 		}
-		
 	}
 	
 	private static void login(String username, String password) {
@@ -63,22 +64,30 @@ public class Main {
 			return;
 		}
 		
-		new LoginRequestMessage(username, password).send(bus)
+		new LoginRequestMessage(username, password).asTask()
 			.expect(MessageDefs.LOGIN_RESPONSE, LoginResponseMessage::from, (response) -> { handleLoginSuccess(username, response); })
-			.error(MessageDefs.INVALID_LOGIN_ERROR, Main::handleLoginError);
+			.error(MessageDefs.INVALID_LOGIN_ERROR, Main::handleLoginError)
+			.send(bus);
 	}
 	
 	private static void handleLoginSuccess(String username, LoginResponseMessage response) {
-		user = new UserContext(username, response.getSessionId());
+		user = new UserSession(username, response.getSessionId());
+		SwingUtilities.invokeLater(() -> {
+			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Logged in as: " + user.getUsername() + "(" + user.getSessionId() + ").")));
+		});
 	}
 	
 	private static void handleLoginError(AnyErrorMessage error) {
 		if(bus != null) {
 			if(error.getSubCode() == ErrorDefs.INVALID_USERNAME_OR_PASSWORD)
-				ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Login failed! Invalid username or password.")));
+				SwingUtilities.invokeLater(() -> {
+					ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Login failed! Invalid username or password.")));
+				});
 			else
-				ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Login failed! Unknown error.")));
-			
+				SwingUtilities.invokeLater(() -> {
+					ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Login failed! Unknown error.")));
+				});
+
 			LoginResult loginResult = ui.doLoginPopup();
 			login(loginResult.Username, loginResult.Password);
 		}
@@ -116,13 +125,26 @@ public class Main {
 		ui.registerOnConnect((host, port) -> {
 			try {
 				connect(host, Integer.parseInt(port));
+			} catch(Exception ex) {
+				ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Unexpected error while connecting: " + ex.getMessage())));
+				bus = null;
+				ui.setConnected(false);
+				return;
+			}
+			
+			try {
 				if(bus != null) {
 					LoginResult loginResult = ui.doLoginPopup();
 					login(loginResult.Username, loginResult.Password);
 				}
-				
 			} catch(Exception ex) {
-				throw new RuntimeException(ex); // register will catch this and handle.
+				SwingUtilities.invokeLater(() -> {
+					ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Unexpected error while logging in: " + ex.getMessage())));
+					ui.setConnected(false);
+				});
+				bus = null;
+				
+				return;
 			}
 		});
 

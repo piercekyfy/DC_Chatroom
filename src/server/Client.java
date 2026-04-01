@@ -14,6 +14,7 @@ import common.MessageDefs;
 import common.MessageHeader;
 import common.ParseResult;
 import common.StreamUtils;
+import common.models.UserSession;
 import common.models.messages.AnyErrorMessage;
 
 import java.io.*;
@@ -22,6 +23,7 @@ import java.io.*;
 public class Client {  // TODO: timeouts
 	private Socket socket;
 	private boolean error = false;
+	private UserSession sessionId = null;
 
 	private Queue<MessageSerializer> sendQueue = new ArrayDeque<MessageSerializer>();
 
@@ -64,6 +66,14 @@ public class Client {  // TODO: timeouts
 	
 	public boolean HasError() {
 		return socket.isClosed() || error;
+	}
+	
+	public UserSession getSession() {
+		return this.sessionId;
+	}
+	
+	public void setSessionId(UserSession sessionId) {
+		this.sessionId = sessionId;
 	}
 	
 	public InetAddress GetAddress() {
@@ -114,11 +124,16 @@ public class Client {  // TODO: timeouts
 				byte[] buffer = new byte[headerResult.getValue().getContentSize()];
 				StreamUtils.read(buffer, in, 0, headerResult.getValue().getContentSize());
 
+
 				server.RouteMessage(this, headerResult.getValue(), buffer);
 			}
-		} catch (Exception ex) {
+		} 
+		catch(SocketTimeoutException ex) {}
+		catch (IOException ex) {
 			System.out.println(ex.getMessage());
 			error = true;
 		}
+		catch (InvalidContentException ex) {}
+		catch (NotFoundException ex) {}
 	}
 }
