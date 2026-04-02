@@ -4,15 +4,17 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 import javax.swing.*;
 
+import common.models.TextMessage;
+import common.models.UserSession;
 import common.ui.UIMessage;
-import common.ui.UIMessageContent;
-import common.ui.UIMessageType;
 import common.ui.UIUser;
 
 public class Interface {
@@ -97,8 +99,6 @@ public class Interface {
 		bottomPanel.add(confirmButton, BorderLayout.EAST);
 		
 		rootFrame.add(bottomPanel, BorderLayout.SOUTH);
-		
-		appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Waiting...")));
 	}
 	
 	public void registerOnToggleStart(Consumer<String> callback) {
@@ -115,18 +115,26 @@ public class Interface {
 		
 		topPanel.revalidate();
 	}
-
-	public void appendUser(UIUser user) {
-		userScrollPanel.add(user.getRoot());
-		userScrollPanel.revalidate();
-		userScrollPanel.repaint();
-	}
 	
-	public void appendMessage(UIMessage message) {
-		messageScrollPanel.add(message.getRoot());
+	public void appendMessage(TextMessage message) {
+		messageScrollPanel.add(new UIMessage().Initialize(message));
 		messageScrollPanel.revalidate();
 		messageScrollPanel.repaint();
 	}
+	
+	public void appendSystemMessage(String text) {
+		appendMessage(new TextMessage(-1, "System", text));
+	}
+	
+	public void drawUsers(List<UserSession> users) {
+		userScrollPanel.removeAll();
+		for(UserSession user : users) {
+			userScrollPanel.add(new UIUser().Initalize(user));
+		}
+		userScrollPanel.revalidate();
+		userScrollPanel.repaint();
+	}
+
 	
 	public void setVisible(boolean visible) {
 		rootFrame.setVisible(visible);

@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 import javax.swing.SwingUtilities;
 
 import common.MessageDefs;
-import common.models.messages.TextMessage;
+import common.models.TextMessage;
 import common.ui.UIMessage;
-import common.ui.UIMessageContent;
-import common.ui.UIMessageType;
 import common.ui.UIUser;
+import server.repositories.MessageRepository;
+import server.repositories.UserRepository;
 import ui.Interface;
 
 public class Main {
@@ -29,13 +29,13 @@ public class Main {
 			controller = new Controller(messageRepository, userRepository);
 			server = new Server(port, controller);
 			ui.setStarted(true);
-			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Started at port:" + port)));	
+			ui.appendSystemMessage("Started at port:" + port);	
 		} catch (IOException ex) {
 			ui.setStarted(false);
-			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to start server: " + ex.getMessage())));
+			ui.appendSystemMessage("Failed to start server: " + ex.getMessage());
 		} catch (InvalidRouteException ex) {
 			ui.setStarted(false);
-			ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Failed to configure routes for specified controller.")));
+			ui.appendSystemMessage("Failed to configure routes for specified controller.");
 		} 
 	}
 	
@@ -43,14 +43,14 @@ public class Main {
 		server.close();
 		server = null;
 		ui.setStarted(false);
-		ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Stopped...")));	
+		ui.appendSystemMessage("Stopped...");
 	}
 	
 	public static void main(String[] args) {
 		// Test Data
-		messageRepository.putOne(new TextMessage(MessageDefs.BROADCAST, 11, LocalDateTime.now(), "Hello1."));
-		messageRepository.putOne(new TextMessage(MessageDefs.BROADCAST, 12, LocalDateTime.now(), "Hello2."));
-		messageRepository.putOne(new TextMessage(MessageDefs.BROADCAST, 13, LocalDateTime.now(), "Hello3."));
+		messageRepository.putOne("fakeUser", "Hello1");
+		messageRepository.putOne("fakeUser", "Hello2");
+		messageRepository.putOne("fakeUser", "Hello3");
 		
 		ui = new Interface("Host");
 		
@@ -62,17 +62,36 @@ public class Main {
 				else
 					stop();
 			} catch(Exception ex) {
-				ui.appendMessage(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Unexpected error in start-up callback.")));
+				ui.appendSystemMessage("Unexpected error in start-up callback.");
 				server.close();
 				server = null;
 			}
 		});
 		
-		userRepository.registerOnSessionCreated((user) -> {
+		messageRepository.registerOnMessageCreated((message) -> {
 			SwingUtilities.invokeLater(() -> {
-				ui.appendUser(new UIUser(user.getUsername(), user.getSessionId()));
+				ui.appendMessage(message);
 			});
 		});
+		
+		userRepository.registerOnSessionCreated((user) -> {
+			SwingUtilities.invokeLater(() -> {
+				ui.drawUsers(userRepository.getAll());
+			});
+		});
+		
+		userRepository.registerOnSessionUpdated((user) -> {
+			SwingUtilities.invokeLater(() -> {
+				ui.drawUsers(userRepository.getAll());
+			});
+		});
+		
+		userRepository.registerOnSessionRemoved((users) -> {
+			SwingUtilities.invokeLater(() -> {
+				ui.drawUsers(userRepository.getAll());
+			});
+		});
+		
 		
 		ui.setVisible(true);
 	}

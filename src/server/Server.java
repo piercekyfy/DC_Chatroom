@@ -2,18 +2,14 @@ package server;
 
 import java.io.*;
 import java.net.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import common.ErrorDefs;
-import common.MessageSerializer;
-import common.MessageDefs;
 import common.MessageHeader;
-import common.models.messages.AnyErrorMessage;
-import common.models.messages.TextMessage;
-
+import common.models.responses.UnrecoverableErrorResponse;
+import common.models.responses.DisconnectedErrorResponse;
 
 // Owner of host socket and all Client socket connections
 public class Server {
@@ -28,8 +24,6 @@ public class Server {
 	
 	public Server(int port, Controller controller) throws IOException, InvalidRouteException {
 		socket = new ServerSocket(port);
-		
-
 		router = new Router<Controller>(controller);
 		
 		acceptThread = new Thread(() -> acceptAll());
@@ -68,17 +62,11 @@ public class Server {
 		try {
 			router.route(context, header.getCode(), header.getSizes(), content);
 		} catch (NotFoundException ex) {
-			
-			
-			requester.sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, header.getCode()).serialize());
-			requester.close();
+			requester.setError();
 		} catch (InvalidContentException ex) {
-			// TODO: ex.getIndex()
-			requester.sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, header.getCode()).serialize());
-			requester.close();
+			requester.setError();
 		}
 	}
-	
 	
 	private void handleAll() {
 		try {
@@ -87,8 +75,18 @@ public class Server {
 				synchronized (clients) {
 					for(Client client : clients) {
 						
-						if(client.HasError()) {
-							System.out.println(client + " disconnected.");
+						if(client.requestedDisconnect()) {
+							try {
+								client.sendMessageImmediately(new DisconnectedErrorResponse(ErrorDefs.NONE, -1));
+							} catch (Exception ex) {}
+							toRemove.add(client);
+							continue;
+						}
+						else if(client.HasError()) {			
+							try {
+								client.sendMessageImmediately(new UnrecoverableErrorResponse(ErrorDefs.NONE, -1));
+							} catch (Exception ex) {}
+							
 							toRemove.add(client);
 							continue;
 						}

@@ -15,7 +15,9 @@ import common.MessageHeader;
 import common.ParseResult;
 import common.StreamUtils;
 import common.models.UserSession;
-import common.models.messages.AnyErrorMessage;
+import common.models.messages.ErrorMessage;
+import common.models.messages.Message;
+import common.models.responses.UnrecoverableErrorResponse;
 
 import java.io.*;
 
@@ -23,7 +25,8 @@ import java.io.*;
 public class Client {  // TODO: timeouts
 	private Socket socket;
 	private boolean error = false;
-	private UserSession sessionId = null;
+	private boolean requestedDisconnect = false;
+	private UserSession session = null;
 
 	private Queue<MessageSerializer> sendQueue = new ArrayDeque<MessageSerializer>();
 
@@ -41,17 +44,39 @@ public class Client {  // TODO: timeouts
 	
 	public void close() {
 		error = true;
+		session.setOnline(false);
 		try {
 			socket.close();
 		} catch (IOException ex) { }
 	}
 	
-	public void sendMessage(MessageSerializer builder) {
-		// TODO: builder-side validation
-		
-		sendQueue.add(builder);
+	public void sendMessage(Message<?> message) {
+		sendQueue.add(message.serialize());
 	}
+	
+	/**
+	 * Send a message to output immediately. Very dangerous, should only be used to write errors before closing sockets.
+	 * @param message
+	 * @throws Exception 
+	 */
+	public void sendMessageImmediately(Message<?> message) throws Exception {
+		OutputStream out = null;
+		
+		try {
+			out = socket.getOutputStream();
+			
+			out = socket.getOutputStream();
 
+			byte[] messageBytes = message.serialize().build();
+			
+			out.write(messageBytes);
+			
+		} catch (Exception ex) {
+			error = true;
+			throw ex;
+		}
+	}
+	
 	public boolean IsReadable() {
 		if(HasError())
 			return false;
@@ -68,12 +93,25 @@ public class Client {  // TODO: timeouts
 		return socket.isClosed() || error;
 	}
 	
+	public void setError() {
+		this.error = true;
+	}
+	
+	public boolean requestedDisconnect() {
+		return this.requestedDisconnect;
+	}
+	
+	public void requestDisconnect() {
+		this.requestedDisconnect = true;
+	}
+	
 	public UserSession getSession() {
-		return this.sessionId;
+		return this.session;
 	}
 	
 	public void setSessionId(UserSession sessionId) {
-		this.sessionId = sessionId;
+		this.session = sessionId;
+		session.setOnline(true);
 	}
 	
 	public InetAddress GetAddress() {
@@ -114,23 +152,18 @@ public class Client {  // TODO: timeouts
 				if(headerResult.getFailureArgIndex() == 0)
 					return;
 				else {
-					error = true; // TODO: new way of erroring
-					// Unrecoverable error (specifies no source)
-					sendMessage(new AnyErrorMessage(MessageDefs.INVALID_HEADER_ERROR, ErrorDefs.INVALID_OR_MISSING_ARG, -1).serialize());
+					error = true;
 					return;
 				}
-			} else {
-				
+			} else {				
 				byte[] buffer = new byte[headerResult.getValue().getContentSize()];
 				StreamUtils.read(buffer, in, 0, headerResult.getValue().getContentSize());
-
 
 				server.RouteMessage(this, headerResult.getValue(), buffer);
 			}
 		} 
 		catch(SocketTimeoutException ex) {}
 		catch (IOException ex) {
-			System.out.println(ex.getMessage());
 			error = true;
 		}
 		catch (InvalidContentException ex) {}

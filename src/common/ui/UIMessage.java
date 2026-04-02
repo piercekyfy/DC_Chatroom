@@ -5,24 +5,16 @@ import java.awt.Color;
 
 import javax.swing.*;
 
-public class UIMessage {
-	private UIMessageType type;
-	private UIMessageContent content;
+import common.models.TextMessage;
+
+public class UIMessage {	
+	public UIMessage() {}
 	
-	private JPanel root;
-	private JLabel text;
-	
-	public UIMessage(UIMessageType type, UIMessageContent content) {
-		this.type = type;
-		this.content = content;
-		
-		root = new JPanel(new BorderLayout());
-		text = new JLabel(content.formatAs(type));
-		text.setForeground(type == UIMessageType.SYSTEM ? Color.RED : Color.BLACK);
+	public JPanel Initialize(TextMessage message) {
+		JPanel root = new JPanel(new BorderLayout());
+		JLabel text = new JLabel(message.getSender() + ": " + message.getContent());
+		text.setForeground(message.getSender().toLowerCase() == "system" ? Color.RED : Color.BLACK);
 		root.add(text, BorderLayout.WEST);
-	}
-	
-	public JPanel getRoot() {
 		return root;
 	}
 }

@@ -1,27 +1,23 @@
-package common.models.messages;
-
-import java.nio.ByteBuffer;
-import java.time.LocalDateTime;
+package common.models.requests;
 
 import common.MessageSerializer;
 import common.MessageDefs;
-import common.MessageHeader;
-import common.StreamUtils;
 import common.models.UserSession;
+import common.models.messages.Message;
 
-public class LoginRequestMessage extends Message<LoginRequestMessage> {	
+public class LoginRequest extends Message<LoginRequest> {	
 	private String username;
 	private String password;
 	private int sessionId;
 	
-	public LoginRequestMessage(String username, String password, int sessionId) {
+	public LoginRequest(String username, String password, int sessionId) {
 		super(MessageDefs.LOGIN_REQUEST);
 		this.username = username;
 		this.password = password;
 		this.sessionId = sessionId;
 	}
 	
-	public LoginRequestMessage(String username, String password) {
+	public LoginRequest(String username, String password) {
 		super(MessageDefs.LOGIN_REQUEST);
 		this.username = username;
 		this.password = password;

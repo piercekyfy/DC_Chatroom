@@ -1,4 +1,4 @@
-package common.models.messages;
+package common.models.responses;
 
 import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
@@ -9,11 +9,12 @@ import common.MessageDeserializer;
 import common.MessageHeader;
 import common.StreamUtils;
 import common.models.UserSession;
+import common.models.messages.Message;
 
-public class LoginResponseMessage extends Message<LoginResponseMessage> {	
+public class LoginResponse extends Message<LoginResponse> {	
 	private int sessionId;
 	
-	public LoginResponseMessage(int sessionId) {
+	public LoginResponse(int sessionId) {
 		super(MessageDefs.LOGIN_RESPONSE);
 		this.sessionId = sessionId;
 	}
@@ -33,8 +34,8 @@ public class LoginResponseMessage extends Message<LoginResponseMessage> {
 		this.sessionId = sessionId;
 	}
 	
-	public static LoginResponseMessage from(MessageHeader header, ByteBuffer content) {
+	public static LoginResponse from(MessageHeader header, ByteBuffer content) {
 		MessageDeserializer msg = MessageDeserializer.fromHeader(header).setBytes(content.array());
-		return new LoginResponseMessage(msg.getIntegerAt(0));
+		return new LoginResponse(msg.getIntegerAt(0));
 	}
 }

@@ -7,12 +7,11 @@ import common.ErrorDefs;
 import common.MessageSerializer;
 import common.MessageDefs;
 import common.StreamUtils;
-import common.models.DownloadResponsePreamble;
 import common.models.User;
 import common.models.UserSession;
-import common.models.messages.AnyErrorMessage;
-import common.models.messages.LoginResponseMessage;
-import common.models.messages.TextMessage;
+import common.models.responses.*;
+import server.repositories.MessageRepository;
+import server.repositories.UserRepository;
 
 public class Controller {
 	
@@ -24,45 +23,44 @@ public class Controller {
 		this.userRepository = userRepository;
 	}
 	
-	@Route(code = MessageDefs.BROADCAST)
-	public void HandleBroadcast(MessageContext context, int senderId, String timestampStr, String content) {		
-		LocalDateTime dateTime = StreamUtils.dateTimeFromString(timestampStr.trim());
-		
-		System.out.println(context.getSource() + " receieved Message from " + senderId + " at " + dateTime + " with content: " + content);
-	
-		messageRepository.putOne(new TextMessage(MessageDefs.BROADCAST, senderId, dateTime, content));
-
-		context.getSource().sendMessage(new TextMessage(MessageDefs.RESPONSE_SUCCESS, -1, LocalDateTime.now(), "Send!").serialize());
-	}
-	
-	@Route(code = MessageDefs.DOWNLOAD_MESSAGE)
-	public void HandleDownloadMessage(MessageContext context, int count) {
-		// TODO: right now it just downloads everything, assuming count = -1
-		
-		List<TextMessage> messages = messageRepository.getAll();
-		
-		context.getSource().sendMessage(DownloadResponsePreamble.GetBuilder(new DownloadResponsePreamble(messages.size())));
-		
-		for(TextMessage message : messages) {
-			context.getSource().sendMessage(message.serialize());
+	private boolean requireSession(MessageContext context, int sourceCode) {
+		if(context.getSession() == null) {
+			context.reply(new GenericErrorResponse(ErrorDefs.NO_SESSION, sourceCode));
+			return false;
 		}
+		return true;
 	}
+	
+	// Login
 	
 	@Route(code = MessageDefs.LOGIN_REQUEST)
-	public void handleLoginRequest(MessageContext context, String username, String password, int sessionId) {
-		// Would check username/password here
-		
+	public void HandleLogin(MessageContext context, String username, String password, int sessionId) {
 		UserSession existing = null;
-		if(sessionId != UserSession.NO_SESSION_ID)
+		if(sessionId != UserSession.NO_SESSION_ID) {
 			existing = userRepository.getOne(sessionId);
+			if(existing == null || existing.isExpired()) {
+				context.reply(new GenericErrorResponse(ErrorDefs.NO_SESSION, MessageDefs.LOGIN_REQUEST));
+				return;
+			} else {
+				existing.setUpdated();
+			}
+		}
 		
 		if(existing == null)
 			existing = userRepository.putOne(username);
-		else
-			existing.setUpdated();
 		
 		context.getSource().setSessionId(existing);
 		
-		context.reply(new LoginResponseMessage(existing.getSessionId()).serialize());
+		context.reply(new LoginResponse(existing.getSessionId()));
+	}
+	
+	@Route(code = MessageDefs.LOGOUT_REQUEST)
+	public void HandleLogout(MessageContext context) {
+		if(!requireSession(context, MessageDefs.LOGOUT_REQUEST))
+			return;
+		
+		userRepository.removeSessions(context.getSession().getUsername());
+		
+		context.getSource().requestDisconnect();
 	}
 }

@@ -1,18 +1,30 @@
 package common;
 
 public class MessageDefs {
-	public static final int INVALID = 0;
-	public static final int BROADCAST = 1;
-	public static final int RESPONSE_SUCCESS = 200;
-	public static final int INVALID_HEADER_ERROR = 400;
-	public static final int INVALID_CONTENT_ERROR = 401;
-	public static final int DOWNLOAD_MESSAGE = 801;
-	public static final int DOWNLOAD_MESSAGE_RESPONSE_PREAMBLE = 898;
-	public static final int NEW_MESSAGE = 899;
-	public static final int GENERIC_ERROR = 999;
+	// /-- Error Responses
 	
-	// Login
+	public static final int INVALID = 0;
+	public static final int GENERIC_ERROR = 1;
+	public static final int UNRECOVERABLE_ERROR = 2;
+	public static final int DISCONNECTED_ERROR = 3;
+			
+	// --/
+	
+	// /-- User Session and Account
+	
 	public static final int LOGIN_REQUEST = 20;
 	public static final int LOGIN_RESPONSE = 21;
-	public static final int INVALID_LOGIN_ERROR = 22;
+	public static final int LOGOUT_REQUEST = 22;
+	
+	// --/
+	
+	// /-- Messages
+	
+	public static final int CHECK_MESSAGES = 30;
+	public static final int MESSAGE_ID = 31;
+	public static final int DOWNLOAD_MESSAGE = 32;
+	public static final int MESSAGE_CONTENT = 33;
+	public static final int SEND_TEXT_MESSAGE = 34;
+	
+	// --/
 }

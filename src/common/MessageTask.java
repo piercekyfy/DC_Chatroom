@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-import common.models.messages.AnyErrorMessage;
 import common.models.messages.ErrorMessage;
 import common.models.messages.Message;
+import common.models.responses.GenericErrorResponse;
 
 public class MessageTask<T extends Message<T>> {
 	private class MessageHandler<M extends Message<M>> {
@@ -45,7 +45,7 @@ public class MessageTask<T extends Message<T>> {
 			return true;
 		else if (errorHandlers.containsKey(header.getCode())) {
 			try {
-				AnyErrorMessage error = AnyErrorMessage.from(header, content);
+				GenericErrorResponse error = GenericErrorResponse.from(header, content);
 				if(outgoing.getCode()  == error.getSourceCode())
 					return true;
 			} catch (Exception e) {
@@ -75,8 +75,8 @@ public class MessageTask<T extends Message<T>> {
 		return this;
 	}
 	
-	public MessageTask<T> error(Integer code, Consumer<AnyErrorMessage> callback) {
-		errorHandlers.put(code, new MessageHandler<>(AnyErrorMessage::from, callback));
+	public MessageTask<T> error(Integer code, Consumer<GenericErrorResponse> callback) {
+		errorHandlers.put(code, new MessageHandler<>(GenericErrorResponse::from, callback));
 		return this;
 	}
 	

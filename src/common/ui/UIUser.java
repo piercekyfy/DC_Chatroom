@@ -6,37 +6,20 @@ import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import common.models.UserSession;
+
 public class UIUser {
-	private String username;
-	private int sessionId;
+	public UIUser() {}
 	
-	private JPanel root;
-	private JLabel text;
-	
-	public UIUser(String username, int sessionId) {
-		this.username = username;
-		this.sessionId = sessionId;
+	public JPanel Initalize(UserSession user) {
+		if(user == null)
+			return null;
 		
-		root = new JPanel(new BorderLayout());
-		text = new JLabel(username + "(" + sessionId + ")");
+		JPanel root = new JPanel(new BorderLayout());
+		JLabel text = new JLabel(user.getUsername() + "(" + user.getSessionId() + "): " + (user.isOnline() ? "Online" : "Offline."));
 		text.setForeground(Color.BLACK);
 		root.add(text, BorderLayout.CENTER);
-	}
-	
-	public JPanel getRoot() {
+		
 		return root;
-	}
-	
-	public String getUsername() {
-		return username;
-	}
-	public void setUsername(String username) {
-		this.username = username;
-	}
-	public int getSessionId() {
-		return sessionId;
-	}
-	public void setSessionId(int sessionId) {
-		this.sessionId = sessionId;
 	}
 }

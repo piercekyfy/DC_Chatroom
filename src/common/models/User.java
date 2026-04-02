@@ -1,6 +1,7 @@
 package common.models;
 
+// Not actually used, because we don't need to create users or check their passwords.
 public class User {
-	public String Name;
-	public String Password;
+	private String username;
+	private String password;
 }

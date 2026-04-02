@@ -38,17 +38,7 @@ public class StreamUtils {
 			sizes[i] = sizeResult.getValue();
 		}
 		
-		ParseResult<Integer> crcResult = StreamUtils.readInt(headerBuffer, in, 0);
-		
-		if(!crcResult.isSuccess()) {
-			return new HeaderParseResult(false, null, 3);
-		}
-		
-		MessageHeader header = new MessageHeader(codeResult.getValue(), sizes, crcResult.getValue());
-		
-		if(!header.validateCRC()) {
-			return new HeaderParseResult(false, header, 4);
-		}
+		MessageHeader header = new MessageHeader(codeResult.getValue(), sizes);
 		
 		return new HeaderParseResult(true, header);
 	}

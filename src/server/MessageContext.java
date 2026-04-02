@@ -1,7 +1,7 @@
 package server;
 
-import common.MessageSerializer;
 import common.models.UserSession;
+import common.models.messages.Message;
 
 public class MessageContext {
 	private Client source;
@@ -10,7 +10,7 @@ public class MessageContext {
 		this.source = source;
 	}
 	
-	public void reply(MessageSerializer message) {
+	public void reply(Message<?> message) {
 		source.sendMessage(message);
 	}
 	

@@ -22,10 +22,10 @@ import common.MessageDefs;
 import common.ParseResult;
 import common.StreamUtils;
 import common.models.UserSession;
-import common.models.messages.AnyErrorMessage;
-import common.models.messages.LoginRequestMessage;
-import common.models.messages.LoginResponseMessage;
 import common.models.messages.TextMessage;
+import common.models.requests.LoginRequest;
+import common.models.responses.GenericErrorResponse;
+import common.models.responses.LoginResponse;
 import common.ui.UIMessage;
 import common.ui.UIMessageContent;
 import common.ui.UIMessageType;
@@ -64,20 +64,20 @@ public class Main {
 			return;
 		}
 		
-		new LoginRequestMessage(username, password).asTask()
-			.expect(MessageDefs.LOGIN_RESPONSE, LoginResponseMessage::from, (response) -> { handleLoginSuccess(username, response); })
+		new LoginRequest(username, password).asTask()
+			.expect(MessageDefs.LOGIN_RESPONSE, LoginRequest::from, (response) -> { handleLoginSuccess(username, response); })
 			.error(MessageDefs.INVALID_LOGIN_ERROR, Main::handleLoginError)
 			.send(bus);
 	}
 	
-	private static void handleLoginSuccess(String username, LoginResponseMessage response) {
+	private static void handleLoginSuccess(String username, LoginRequest response) {
 		user = new UserSession(username, response.getSessionId());
 		SwingUtilities.invokeLater(() -> {
 			ui.append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Logged in as: " + user.getUsername() + "(" + user.getSessionId() + ").")));
 		});
 	}
 	
-	private static void handleLoginError(AnyErrorMessage error) {
+	private static void handleLoginError(GenericErrorResponse error) {
 		if(bus != null) {
 			if(error.getSubCode() == ErrorDefs.INVALID_USERNAME_OR_PASSWORD)
 				SwingUtilities.invokeLater(() -> {

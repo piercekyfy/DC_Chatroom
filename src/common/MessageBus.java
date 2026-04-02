@@ -11,8 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 
-import server.Server;
-
 public class MessageBus {
 	private Socket socket;
 	private boolean error = false;

@@ -1,12 +1,8 @@
 package common;
 
 import java.nio.ByteBuffer;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.CRC32;
-
-import common.models.messages.TextMessage;
 
 public class MessageSerializer {
 	private int code = MessageDefs.INVALID;
@@ -52,12 +48,8 @@ public class MessageSerializer {
 			sizes[i] = content.get(i).getSize();
 			buffer.putInt(sizes[i]);
 		}
-		
-		buffer.flip();
-		CRC32 crc = new CRC32();
-		crc.update(buffer);
 
-		return new MessageHeader(code, sizes, (int)crc.getValue());
+		return new MessageHeader(code, sizes);
 	}
 	
 	public byte[] build() {
@@ -69,29 +61,11 @@ public class MessageSerializer {
 		buffer.putInt(header.getSizes().length);
 		for(int size : header.getSizes())
 			buffer.putInt(size);
-		buffer.putInt(header.getCRC());
 		
 		for(MessageContentElement element : content) {
 			buffer.put(element.getBytes());
 		}
 		
 		return buffer.array();
-	}
-	
-	// Pre-defined messages
-	
-	public MessageSerializer setAsInvalidHeaderArg(int argIndex) {
-		reset();
-		setCode(MessageDefs.INVALID_HEADER_ERROR);
-		appendContentInt(ErrorDefs.INVALID_OR_MISSING_ARG);
-		appendContentInt(argIndex);
-		return this;
-	}
-	
-	public MessageSerializer setAsInvalidContent(int index) {
-		reset();
-		setCode(MessageDefs.INVALID_CONTENT_ERROR);
-		appendContentInt(index);
-		return this;
 	}
 }
