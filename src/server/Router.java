@@ -21,7 +21,20 @@ public class Router<T> {
 			throw new NotFoundException("Expected route definiton (" + code + ").");
 		
 		Object[] paramValues = new Object[controllerRoute.getParameterCount()]; 
-
+		
+		
+		
+		if(sizes.length == 0) {
+			if(paramValues.length > 0)
+				paramValues[0] = context;
+			try {
+				controllerRoute.invoke(controller, paramValues);
+			} catch (Exception ex) {
+				throw new InvalidContentException(-1);
+			}
+			return;
+		}
+		
 		int index = 0;
 		int sizeIndex = 0;
 		int offset = 0;

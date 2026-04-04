@@ -20,12 +20,24 @@ public class MessageRepository {
 		}
 	}
 	
-	public void putOne(String username, String content) {
+	public TextMessage getOne(int id) {
+		synchronized (messages) {
+			for(TextMessage message : messages) {
+				if(message.getId() == id)
+					return message;
+			}
+		}
+		
+		return null;
+	}
+	
+	public TextMessage putOne(String username, String content) {
 		synchronized (messages) {
 			currentId += 1;
 			TextMessage message = new TextMessage(currentId, username, content);
 			messages.add(message);
 			onMessageCreated(message);
+			return message;
 		}
 	}
 	

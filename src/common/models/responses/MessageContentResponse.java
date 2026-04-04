@@ -40,6 +40,22 @@ public class MessageContentResponse extends Message<MessageContentResponse> {
 		this.id = id;
 	}
 	
+	public String getSender() {
+		return sender;
+	}
+
+	public void setSender(String sender) {
+		this.sender = sender;
+	}
+
+	public String getContent() {
+		return content;
+	}
+
+	public void setContent(String content) {
+		this.content = content;
+	}
+
 	public static MessageContentResponse from(MessageHeader header, ByteBuffer content) {
 		MessageDeserializer msg = MessageDeserializer.fromHeader(header).setBytes(content.array());
 		return new MessageContentResponse(msg.getIntegerAt(0), msg.getStringAt(1), msg.getStringAt(2));

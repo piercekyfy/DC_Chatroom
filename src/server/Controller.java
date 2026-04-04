@@ -7,6 +7,7 @@ import common.ErrorDefs;
 import common.MessageSerializer;
 import common.MessageDefs;
 import common.StreamUtils;
+import common.models.TextMessage;
 import common.models.User;
 import common.models.UserSession;
 import common.models.responses.*;
@@ -62,5 +63,45 @@ public class Controller {
 		userRepository.removeSessions(context.getSession().getUsername());
 		
 		context.getSource().requestDisconnect();
+	}
+	
+	
+	@Route(code = MessageDefs.CHECK_MESSAGES)
+	public void HandleCheckRequest(MessageContext context) {
+		if(!requireSession(context, MessageDefs.CHECK_MESSAGES))
+			return;
+		
+		for(TextMessage message : messageRepository.getAll()) {
+			if(context.getSession().isDownloaded(message.getId()))
+				continue;
+			context.reply(new MessageIdResponse(message.getId()));
+		}
+	}
+	
+	@Route(code = MessageDefs.DOWNLOAD_MESSAGE)
+	public void HandleDownloadRequest(MessageContext context, int id) {
+		if(!requireSession(context, MessageDefs.CHECK_MESSAGES))
+			return;
+		
+		TextMessage message = messageRepository.getOne(id);
+		
+		if(message == null) {
+			context.reply(new GenericErrorResponse(ErrorDefs.NO_MESSAGES, MessageDefs.DOWNLOAD_MESSAGE));
+			return;
+		}
+		
+		context.getSession().registerDownloaded(message.getId());
+		context.reply(new MessageContentResponse(message.getId(), message.getSender(), message.getContent()));
+	}
+	
+	@Route(code = MessageDefs.SEND_TEXT_MESSAGE)
+	public void HandleSendText(MessageContext context, String text) {
+		if(!requireSession(context, MessageDefs.SEND_TEXT_MESSAGE))
+			return;
+		
+		TextMessage message = messageRepository.putOne(context.getUsername(), text);
+		
+		context.getSession().registerDownloaded(message.getId());
+		context.reply(new MessageContentResponse(message.getId(), message.getSender(), message.getContent()));
 	}
 }

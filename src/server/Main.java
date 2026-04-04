@@ -47,11 +47,6 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		// Test Data
-		messageRepository.putOne("fakeUser", "Hello1");
-		messageRepository.putOne("fakeUser", "Hello2");
-		messageRepository.putOne("fakeUser", "Hello3");
-		
 		ui = new Interface("Host");
 		
 		ui.registerOnToggleStart((port) -> {

@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import common.models.UserSession;
 
 public class UserRepository {
-	List<UserSession> sessions = Collections.synchronizedList(new ArrayList<UserSession>()); // Could be a hashmap
+	List<TrackedUserSession> sessions = Collections.synchronizedList(new ArrayList<TrackedUserSession>()); // Could be a hashmap
 	private int currentId = 0;
 	
 	private List<Consumer<UserSession>> onSessionCreatedListeners = new ArrayList<>();
@@ -31,18 +31,6 @@ public class UserRepository {
 		return null;
 	}
 	
-	public void setOnline(int sessionId, boolean online) {
-		synchronized (sessions) {
-			for(UserSession session : sessions) {
-				if(session.getSessionId() == sessionId) {
-					session.setOnline(online);
-					onSessionUpdated(session);
-					break;
-				}
-			}
-		}
-	}
-	
 	public UserSession putOne(String username) {
 		synchronized (sessions) {
 			for(UserSession session : sessions) {
@@ -53,7 +41,7 @@ public class UserRepository {
 			}
 			
 			currentId += 1;
-			UserSession session = new UserSession(username, currentId);
+			TrackedUserSession session = new TrackedUserSession(this, username, currentId);
 			sessions.add(session);
 			onSessionCreated(session);
 			return session;
@@ -96,7 +84,7 @@ public class UserRepository {
 		}
 	}
 	
-	private void onSessionUpdated(UserSession session) {
+	public void onSessionUpdated(UserSession session) {
 		for(Consumer<UserSession> listener : onSessionUpdatedListeners) {
 			listener.accept(session);
 		}

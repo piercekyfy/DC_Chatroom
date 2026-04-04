@@ -44,7 +44,8 @@ public class Client {  // TODO: timeouts
 	
 	public void close() {
 		error = true;
-		session.setOnline(false);
+		if(session != null)
+			session.setOnline(false);
 		try {
 			socket.close();
 		} catch (IOException ex) { }

@@ -29,6 +29,9 @@ public class MessageTask<T extends Message<T>> {
 	private MessageHandler<?> expectHandler = null;
 	private Map<Integer, MessageHandler<?>> errorHandlers = new HashMap<>();
 	private Consumer<Exception> exceptionEvent = null;
+	private Runnable closedEvent = null;
+	
+	private boolean shouldExpire = true;
 	
 	private Message<T> outgoing;
 	
@@ -61,7 +64,19 @@ public class MessageTask<T extends Message<T>> {
 		else {
 			errorHandlers.get(header.getCode()).invoke(header, content);
 		}
-		// exception?
+	}
+	
+	public void expire() {
+		this.shouldExpire = true;
+	}
+	
+	public boolean shouldExpire() {
+		return this.shouldExpire;
+	}
+	
+	public void handleDisconnect() {
+		if(closedEvent != null)
+			closedEvent.run();
 	}
 	
 	public <M extends Message<M>> MessageTask<T> expect(int code, BiFunction<MessageHeader, ByteBuffer, M> deserializer,  Consumer<M> callback) {
@@ -80,8 +95,18 @@ public class MessageTask<T extends Message<T>> {
 		return this;
 	}
 	
+	public MessageTask<T> closed(Runnable callback) {
+		closedEvent = callback;
+		return this;
+	}
+	
 	public MessageTask<T> onException(Consumer<Exception> callback) {
 		exceptionEvent = callback;
+		return this;
+	}
+	
+	public MessageTask<T> dontExpireOnComplete() {
+		this.shouldExpire = false;
 		return this;
 	}
 	

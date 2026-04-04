@@ -6,19 +6,18 @@ import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import javax.swing.*;
 
+import common.models.TextMessage;
 import common.ui.UIMessage;
-import common.ui.UIMessageContent;
-import common.ui.UIMessageType;
 
 public class Interface {
 	private JFrame rootFrame;
 	private JPanel topPanel;
 	private JPanel mainScrollPanel;
 
-	
 	private JTextField hostInputField;
 	private JTextField portInputField;
 	private JButton connectButton;
@@ -80,8 +79,6 @@ public class Interface {
 		bottomPanel.add(confirmButton, BorderLayout.EAST);
 		
 		rootFrame.add(bottomPanel, BorderLayout.SOUTH);
-		
-		append(new UIMessage(UIMessageType.SYSTEM, new UIMessageContent("Disconnected...")));
 	}
 	
 	public void registerOnConnect(BiConsumer<String, String> callback) {
@@ -92,6 +89,15 @@ public class Interface {
 		    String port = portInputField.getText().trim();
 			
 		    callback.accept(host, port);
+		});
+	}
+	
+	public void registerOnSend(Consumer<String> callback) {
+		confirmButton.addActionListener(e -> {
+			
+			String text = textInputField.getText().trim();
+			
+			callback.accept(text);
 		});
 	}
 
@@ -109,6 +115,20 @@ public class Interface {
 		return result == JOptionPane.OK_OPTION ? new LoginResult(usernameField.getText().trim(), passwordField.getText().trim()) : new LoginResult(null, null);
 	}
 	
+	public void appendMessage(TextMessage message) {
+		mainScrollPanel.add(new UIMessage().Initialize(message));
+		mainScrollPanel.revalidate();
+		mainScrollPanel.repaint();
+	}
+	
+	public void appendSystemMessage(String text) {
+		appendMessage(new TextMessage(-1, "System", text));
+	}
+	
+	public void clearInput() {
+		textInputField.setText("");
+	}
+	
 	public void setConnected(boolean connected) {
 		hostInputField.setEnabled(!connected);
 		portInputField.setEnabled(!connected);
@@ -117,12 +137,6 @@ public class Interface {
 		confirmButton.setEnabled(connected);
 		
 		topPanel.revalidate();
-	}
-	
-	public void append(UIMessage message) {
-		mainScrollPanel.add(message.getRoot());
-		mainScrollPanel.revalidate();
-		mainScrollPanel.repaint();
 	}
 	
 	public void setVisible(boolean visible) {

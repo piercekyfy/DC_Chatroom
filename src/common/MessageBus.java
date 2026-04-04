@@ -38,6 +38,9 @@ public class MessageBus {
 	
 	public void close() {
 		try {
+			for(MessageTask<?> task : waitingTasks) {
+				task.handleDisconnect();
+			}
 			socket.close();
 		} catch (IOException ex) {}
 	}
@@ -55,12 +58,21 @@ public class MessageBus {
 	
 	private void onMessage(MessageHeader header, byte[] content) {
 		synchronized(waitingTasks) {
+			List<MessageTask<?>> toRemove = new ArrayList<>();
 			for(MessageTask<?> task : waitingTasks) {
+				
 				if(task.doesExpect(header, ByteBuffer.wrap(content, 0, header.getContentSize()))) {
 					task.handleMessage(header, ByteBuffer.wrap(content, 0, header.getContentSize()));
-					waitingTasks.remove(task);
+					if(task.shouldExpire())
+						waitingTasks.remove(task);
 					break;
+				} else if (task.shouldExpire()) {
+					toRemove.add(task);
 				}
+			}
+			
+			for(MessageTask<?> task : toRemove) {
+				waitingTasks.remove(task);
 			}
 		}
 	}
