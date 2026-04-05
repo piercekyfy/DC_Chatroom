@@ -32,7 +32,7 @@ public class Client {  // TODO: timeouts
 
 	public Client(Socket socket) throws SocketException {
 		this.socket = socket;
-		this.socket.setSoTimeout(100);
+		this.socket.setSoTimeout(10);
 	}
 	
 	public void handle(Server server) { 

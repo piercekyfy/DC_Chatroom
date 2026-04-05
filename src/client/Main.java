@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import javax.swing.SwingUtilities;
 
 import client.ui.Interface;
@@ -55,9 +58,10 @@ public class Main {
 		}
 		
 		try {
-			Socket s = new Socket();
+			SSLSocketFactory socketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();	
+			SSLSocket s = (SSLSocket)socketFactory.createSocket(host, port);
+			s.startHandshake();
 			s.setSoTimeout(100);
-			s.connect(new InetSocketAddress(host, port), 5000);
 			bus = new MessageBus(s);
 			ui.setConnected(true);
 			lastHost = host;

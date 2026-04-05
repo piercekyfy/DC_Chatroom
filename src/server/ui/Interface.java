@@ -1,4 +1,4 @@
-package ui;
+package server.ui;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -26,9 +26,6 @@ public class Interface {
 	
 	private JTextField portInputField;
 	private JButton toggleStartButton;
-	
-	private JTextField textInputField;
-	private JButton confirmButton;
 	
 	public Interface(String title) {
 		rootFrame = new JFrame(title);
@@ -86,19 +83,6 @@ public class Interface {
 		mainPanel.add(messageScrollPane, mainGrid);
 		
 		rootFrame.add(mainPanel, BorderLayout.CENTER);
-		
-		JPanel bottomPanel = new JPanel();
-		bottomPanel.setLayout(new BorderLayout());
-		
-		textInputField = new JTextField();
-		confirmButton = new JButton("Send");
-
-		confirmButton.setEnabled(false);
-		
-		bottomPanel.add(textInputField, BorderLayout.CENTER);
-		bottomPanel.add(confirmButton, BorderLayout.EAST);
-		
-		rootFrame.add(bottomPanel, BorderLayout.SOUTH);
 	}
 	
 	public void registerOnToggleStart(Consumer<String> callback) {

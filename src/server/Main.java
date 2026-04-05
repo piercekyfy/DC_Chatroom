@@ -3,6 +3,7 @@ package server;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
+import javax.net.ssl.SSLServerSocket;
 import javax.swing.SwingUtilities;
 
 import common.MessageDefs;
@@ -11,10 +12,11 @@ import common.ui.UIMessage;
 import common.ui.UIUser;
 import server.repositories.MessageRepository;
 import server.repositories.UserRepository;
-import ui.Interface;
+import server.ui.Interface;
 
 public class Main {
 	
+	private static DemoSocketFactory socketFactory;
 	private static Interface ui = null;
 	private static Server server = null;
 	private static Controller controller = null;
@@ -26,8 +28,9 @@ public class Main {
 			return;
 		
 		try {
+			SSLServerSocket socket = socketFactory.getSocket(port);
 			controller = new Controller(messageRepository, userRepository);
-			server = new Server(port, controller);
+			server = new Server(socket, controller);
 			ui.setStarted(true);
 			ui.appendSystemMessage("Started at port:" + port);	
 		} catch (IOException ex) {
@@ -46,7 +49,19 @@ public class Main {
 		ui.appendSystemMessage("Stopped...");
 	}
 	
+	/**
+	 * 
+	 * @param args - full path to .jks key-store , key-store password
+	 */
 	public static void main(String[] args) {
+		
+		try {
+			socketFactory = new DemoSocketFactory(args[0], args[1]);
+		} catch(Exception ex) {
+			System.out.println("Failed to instantiate socket factory, found no valid key-store file at " + args[0] + " or password supplied was incorrect.");
+			return;
+		}
+
 		ui = new Interface("Host");
 		
 		ui.registerOnToggleStart((port) -> {

@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLSocket;
+
 import common.ErrorDefs;
 import common.MessageHeader;
 import common.models.responses.UnrecoverableErrorResponse;
@@ -13,7 +16,7 @@ import common.models.responses.DisconnectedErrorResponse;
 
 // Owner of host socket and all Client socket connections
 public class Server {
-	private ServerSocket socket;
+	private SSLServerSocket socket;
 	private List<Client> clients = Collections.synchronizedList(new ArrayList<Client>());
 	private boolean closed = false;
 	
@@ -22,8 +25,8 @@ public class Server {
 	private Thread acceptThread;
 	private Thread handleThread;
 	
-	public Server(int port, Controller controller) throws IOException, InvalidRouteException {
-		socket = new ServerSocket(port);
+	public Server(SSLServerSocket socket, Controller controller) throws IOException, InvalidRouteException {
+		this.socket = socket;
 		router = new Router<Controller>(controller);
 		
 		acceptThread = new Thread(() -> acceptAll());
@@ -117,10 +120,10 @@ public class Server {
 
 	private void acceptAll() {
 		while(!closed) {
-			Socket accepted = null;
+			SSLSocket accepted = null;
 			try {
-				accepted = socket.accept();
-				accepted.setSoTimeout(100);
+				accepted = (SSLSocket)socket.accept();
+				accepted.setSoTimeout(500);
 				Client client = new Client(accepted);
 
 				synchronized (clients) {
