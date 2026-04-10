@@ -1,0 +1,31 @@
+classDiagram
+    class MessageHandler {
+        +supports(MessageHeader, ByteBuffer) : boolean
+        +handle(MessageHeader, ByteBuffer) 
+        +handleStopped()
+        +isComplete() : boolean
+    }
+
+    class MessageConsumer~M extends Message~ {
+        -BiFunction~MessageHeader ByteBuffer M~ deserializer
+        -Consumer~M~ callback
+        +invoke(MessageHeader, ByteBuffer)
+    }
+
+    class MessageTask {
+        -int expectCode
+        -MessageConsumer~?~ expectHandler
+        -Map~Integer MessageConsumer~?~~ errorHandlers
+        -Runnable closedHandler
+
+        +send(MessageBus)
+        +expectsAny() : boolean
+        +complete()
+        +expect~M extends Message~(int, BiFunction~MessageHeader ByteBuffer M~, Consumer~M~) : MessageTask
+        +error~E extends ErrorMessage~(int, BiFunction~MessageHeader ByteBuffer E~, Consumer~E~) : MessageTask
+        +closed(Runnable) : MessageTask
+        +dontExpireOnComplete() : MessageTask
+        +getMessage() : Message
+    }
+
+    MessageHandler <|-- MessageTask

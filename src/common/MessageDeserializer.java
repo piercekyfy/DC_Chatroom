@@ -1,9 +1,10 @@
 package common;
 
-import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+
+import common.models.messages.MessageHeader;
 
 public class MessageDeserializer {
 	private List<Integer> sizes = new ArrayList<Integer>();

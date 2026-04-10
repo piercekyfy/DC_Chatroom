@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 import common.MessageSerializer;
 import common.models.messages.ErrorMessage;
+import common.models.messages.MessageHeader;
 import common.MessageDefs;
-import common.MessageHeader;
 
-public class GenericErrorResponse extends ErrorMessage<GenericErrorResponse>  {
+public class GenericErrorResponse extends ErrorMessage  {
 
 	public GenericErrorResponse(int subCode, int sourceCode) {
 		super(MessageDefs.GENERIC_ERROR, subCode, sourceCode);

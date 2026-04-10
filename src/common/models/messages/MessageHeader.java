@@ -1,4 +1,4 @@
-package common;
+package common.models.messages;
 
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;

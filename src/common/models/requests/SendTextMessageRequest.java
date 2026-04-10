@@ -5,7 +5,7 @@ import common.MessageDefs;
 import common.models.UserSession;
 import common.models.messages.Message;
 
-public class SendTextMessageRequest extends Message<SendTextMessageRequest> {
+public class SendTextMessageRequest extends Message {
 	private String content;
 	
 	public SendTextMessageRequest(String content) {

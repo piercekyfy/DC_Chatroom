@@ -3,7 +3,7 @@ package common.models.messages;
 import common.MessageSerializer;
 import common.MessageTask;
 
-public abstract class Message<T extends Message<T>>  {
+public abstract class Message implements MessageBase {
 	protected int code;
 	
 	public Message(int code) {
@@ -12,8 +12,8 @@ public abstract class Message<T extends Message<T>>  {
 	
 	public abstract MessageSerializer serialize();
 	
-	public MessageTask<T> asTask() {
-		return new MessageTask<T>(this);
+	public MessageTask asTask() {
+		return new MessageTask(this);
 	}
 	
 	public int getCode() {

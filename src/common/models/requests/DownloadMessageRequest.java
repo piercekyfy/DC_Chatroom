@@ -5,7 +5,7 @@ import common.MessageDefs;
 import common.models.UserSession;
 import common.models.messages.Message;
 
-public class DownloadMessageRequest extends Message<DownloadMessageRequest> {
+public class DownloadMessageRequest extends Message {
 	private int id;
 	
 	public DownloadMessageRequest(int id) {

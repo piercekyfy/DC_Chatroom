@@ -30,6 +30,7 @@ import common.models.UserSession;
 import common.models.requests.CheckMessagesRequest;
 import common.models.requests.DownloadMessageRequest;
 import common.models.requests.LoginRequest;
+import common.models.requests.LogoutRequest;
 import common.models.requests.SendTextMessageRequest;
 import common.models.responses.GenericErrorResponse;
 import common.models.responses.LoginResponse;
@@ -45,6 +46,7 @@ public class Main {
 	private static Interface ui = null;
 	private static MessageBus bus = null;
 	private static UserSession user = null;
+	private static UserSession lastUser = null;
 
 	private static String lastHost = "";
 	private static int lastPort = 0;
@@ -76,11 +78,12 @@ public class Main {
 		ui.setConnected(false);
 		ui.appendSystemMessage("Disconnected...");
 		
-		if(bus != null) {
-			bus.close();
-		}
-		
-		bus = null;
+		lastUser = null;
+	    lastPass = "";
+	    user = null;
+	    
+	    if(bus != null && !bus.hasError())
+	    	new LogoutRequest().asTask().send(bus);
 	}
 	
 	private static void login(String username, String password) {
@@ -99,6 +102,9 @@ public class Main {
 	}
 	
 	private static void login(UserSession session, String password) {
+		if(bus == null)
+			return;
+		
 		if(session.getUsername() == null || password == null) {
 			bus.close();
 			bus = null;
@@ -147,7 +153,7 @@ public class Main {
 	
 	private static void run() {
 		long lastTime = System.currentTimeMillis();
-		MessageTask<CheckMessagesRequest> lastCheckTask = null;
+		MessageTask lastCheckTask = null;
 
 		while(true) {
 			if(bus == null) {
@@ -160,16 +166,20 @@ public class Main {
 			}
 			
 			if(bus.hasError()) { 
+				lastUser = user;
+				user = null;
 				bus.close();
 				bus = null;
-				if(user != null) {
+				if(lastUser != null) {
 					try {
 						connect(lastHost, lastPort);
-						login(user, lastPass);
+						login(lastUser, lastPass);
 					} catch (IOException ex) {
 						bus.close();
 						bus = null;
 						SwingUtilities.invokeLater(() -> { ui.setConnected(false); });
+					} finally {
+						lastUser = null;
 					}
 				} else {
 					SwingUtilities.invokeLater(() -> { ui.setConnected(false); });
@@ -177,7 +187,7 @@ public class Main {
 						
 				continue;
 			}
-			
+
 			long now = System.currentTimeMillis();
 			if (now - lastTime >= POLL_MESSAGES_MS) {
 				lastTime = now;
@@ -185,7 +195,7 @@ public class Main {
 				if(bus != null && user != null) {
 				
 		            if(lastCheckTask != null)
-		            	lastCheckTask.expire();
+		            	lastCheckTask.complete();
 		            
 		            new CheckMessagesRequest().asTask()
 		            	.dontExpireOnComplete()
@@ -201,6 +211,9 @@ public class Main {
 	}
 	
 	private static void registerNewMessage(MessageIdResponse id) {
+		if(bus == null)
+			return;
+		
 		if(user.isDownloaded(id.getId()))
 			return;
 		user.registerDownloaded(id.getId()); // Convenient to re-use user session functionality to track local downloads.
@@ -214,8 +227,6 @@ public class Main {
 			.send(bus);
 	}
 	
-	
-	
 	public static void main(String[] args) throws IOException, InterruptedException {
 		
 		ioThread = new Thread(Main::run);
@@ -223,26 +234,31 @@ public class Main {
 		
 		ui = new Interface("Client");
 		
-		ui.registerOnConnect((host, port) -> {
-			try {
-				connect(host, Integer.parseInt(port));
-			} catch(Exception ex) {
-				ui.appendSystemMessage("Unexpected error while connecting: " + ex.getMessage());
-				bus = null;
-				ui.setConnected(false);
-				return;
-			}
-			
-			try {
-				if(bus != null) {
-					LoginResult loginResult = ui.doLoginPopup();
-					login(loginResult.Username, loginResult.Password);
+		ui.registerOnToggleConnect((host, port) -> {
+			if(bus == null) {
+				try {
+					connect(host, Integer.parseInt(port));
+				} catch(Exception ex) {
+					ui.appendSystemMessage("Unexpected error while connecting: " + ex.getMessage());
+					bus = null;
+					ui.setConnected(false);
+					return;
 				}
-			} catch(Exception ex) {
-				ui.appendSystemMessage("Unexpected error while logging in: " + ex.getMessage());
-				bus = null;
+				
+				try {
+					if(bus != null) {
+						LoginResult loginResult = ui.doLoginPopup();
+						login(loginResult.Username, loginResult.Password);
+					}
+				} catch(Exception ex) {
+					ui.appendSystemMessage("Unexpected error while logging in: " + ex.getMessage());
+					bus = null;
+					ui.setConnected(false);
+					return;
+				}
+			} else {
+				disconnect();
 				ui.setConnected(false);
-				return;
 			}
 		});
 		
@@ -252,9 +268,10 @@ public class Main {
 					.expect(MessageDefs.MESSAGE_CONTENT, MessageContentResponse::from, (response) -> {
 						user.registerDownloaded(response.getId());
 						ui.appendMessage(new TextMessage(response.getId(), response.getSender(), response.getContent()));
+						ui.clearInput();
 					})
 					.error(MessageDefs.GENERIC_ERROR, (error) -> {
-						ui.appendSystemMessage("Error!: " + error);
+						ui.appendSystemMessage("Error sending message! Code: " + error.getSubCode());
 					})
 					.closed(() -> {
 						ui.appendSystemMessage("Failed to send message. Reconnecting...");

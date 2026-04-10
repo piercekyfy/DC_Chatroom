@@ -10,8 +10,8 @@ public class MessageContext {
 		this.source = source;
 	}
 	
-	public void reply(Message<?> message) {
-		source.sendMessage(message);
+	public void reply(Message message) {
+		source.send(message);
 	}
 	
 	public Client getSource() {

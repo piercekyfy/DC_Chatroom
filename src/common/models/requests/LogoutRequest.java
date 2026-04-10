@@ -5,10 +5,10 @@ import common.MessageDefs;
 import common.models.UserSession;
 import common.models.messages.Message;
 
-public class CheckMessagesRequest extends Message {	
+public class LogoutRequest extends Message {	
 	
-	public CheckMessagesRequest() {
-		super(MessageDefs.CHECK_MESSAGES);
+	public LogoutRequest() {
+		super(MessageDefs.LOGOUT_REQUEST);
 	}
 	
 	@Override

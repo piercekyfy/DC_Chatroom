@@ -5,7 +5,7 @@ import common.MessageDefs;
 import common.models.UserSession;
 import common.models.messages.Message;
 
-public class LoginRequest extends Message<LoginRequest> {	
+public class LoginRequest extends Message {	
 	private String username;
 	private String password;
 	private int sessionId;

@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 import common.MessageSerializer;
 import common.models.messages.ErrorMessage;
+import common.models.messages.MessageHeader;
 import common.MessageDefs;
-import common.MessageHeader;
 
-public class DisconnectedErrorResponse extends ErrorMessage<DisconnectedErrorResponse>  {
+public class DisconnectedErrorResponse extends ErrorMessage  {
 
 	public DisconnectedErrorResponse(int subCode, int sourceCode) {
 		super(MessageDefs.DISCONNECTED_ERROR, subCode, sourceCode);

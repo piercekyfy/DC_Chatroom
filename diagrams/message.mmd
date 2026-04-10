@@ -1,0 +1,94 @@
+classDiagram
+    direction LR
+    namespace common.models.messages {
+        class MessageBase {
+            <<interface>> 
+            +getCode() : int
+        }
+        
+        class Message {
+            -int code
+            +serialize() : MessageSerializer
+            +asTask() : MessageTask
+        }
+
+        class ErrorMessage {
+            -int subCode
+            -int sourceCode
+        }
+
+        class MessageHeader {
+            -int code
+            -int[] sizes
+            -int total
+            +getSize() : int
+            +getContentSize() : int
+        }
+    }
+
+    namespace common {
+        class ByteBufferPool {
+            -List~ByteBuffer~ available
+            -List~ByteBuffer~ rented
+            +rent(int) : ByteBuffer
+            +release(ByteBuffer)
+        }
+
+        class MessageContentElement {
+            -Integer intValue
+            -String stringValue
+            -byte[] bytes
+            +getSize() : int
+            +getBytes() : byte[]
+        }
+        
+        class MessageSerializer {
+            -int code
+            reset()
+            setCode(int) : MessageSerializer
+            appendContentInt(int) : MessageSerializer
+            setContentInt(int, int) : MessageSerializer
+            appendContentString(string) : MessageSerializer
+            setContentString(int, string) : MessageSerializer
+            buildheader() : MessageHeader
+            build(MessageHeader, ByteBuffer)
+            rentBuild(ByteBufferPool)
+        }
+
+        class MessageDeserializer {
+            -List~Integer~ sizes
+            -byte[] bytes
+            +fromHeader() : MessageDeserializer$
+            +reset()
+            +setBytes(byte[]) : MessageDeserializer
+            +getIntegerAt(int) : int
+            +getBooleanAt(int) : boolean
+            +getStringAt(int) : String
+            +getDateTimeAt(int) : LocalDateTime
+        }
+
+        class MessageBus {
+            -Socket socket
+            -Queue~MessageSerializer~ sendQueue
+            -List~MessageHandler~ handlers
+            -boolean error
+            +handle()
+            +send(Message)
+            +register(MessageTask)
+            +register(MessageHandler)
+            +writeImmediately(MessageSerializer) : boolean
+            +close()
+            +getAddress() : InetAddress
+            -writeOne() : boolean
+            -readOne() : boolean
+            -onMessage(MessageHeader, ByteBuffer)
+        }
+
+    }
+    
+    MessageBus "1" --> "1" ByteBufferPool : has a
+
+    Message  --|> MessageBase
+    ErrorMessage --> Message
+
+    MessageSerializer "1" --> "0..*" MessageContentElement

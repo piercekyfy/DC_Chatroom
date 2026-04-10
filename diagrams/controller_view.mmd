@@ -1,0 +1,28 @@
+classDiagram
+    class Controller {
+        -MessageRepository messageRepository
+        -UserRepository userRepository
+        +HandleLogin(MessageContext, String, String, int)
+        +HandleLogout(MessageContext)
+        +HandleCheckRequest(MessageContext)
+        +HandleDownloadRequest(MessageContext, int)
+        +HandleSendText(MessageContext, String)
+    }
+
+    class MessageContext {
+        -Client client
+        +reply(Message)
+        +getSource() : Client
+        +getUserName() : String
+        +isLoggedIn() : boolean
+        +getSession() : UserSession
+    }
+
+    class Router~ControllerType~ {
+        -ControllerType controller
+        -HashMap<Integer, Method> routingMap
+        +route(MessageContext, int, int[], ByteBuffer)
+        -buildMap() : HashMap<Integer, Method>
+    }
+
+    Router --> Controller

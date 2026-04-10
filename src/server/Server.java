@@ -2,6 +2,7 @@ package server;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -10,20 +11,20 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
 import common.ErrorDefs;
-import common.MessageHeader;
 import common.models.responses.UnrecoverableErrorResponse;
+import common.models.messages.MessageHeader;
 import common.models.responses.DisconnectedErrorResponse;
 
 // Owner of host socket and all Client socket connections
 public class Server {
+	private static final int MAX_CLIENTS_PER_GROUP = 5;
+	
 	private SSLServerSocket socket;
-	private List<Client> clients = Collections.synchronizedList(new ArrayList<Client>());
+	private Router<Controller> router;
+	private Thread acceptThread;
 	private boolean closed = false;
 	
-	private Router<Controller> router;
-	
-	private Thread acceptThread;
-	private Thread handleThread;
+	private List<ClientGroup> clientGroups = new ArrayList<>();
 	
 	public Server(SSLServerSocket socket, Controller controller) throws IOException, InvalidRouteException {
 		this.socket = socket;
@@ -31,9 +32,6 @@ public class Server {
 		
 		acceptThread = new Thread(() -> acceptAll());
 		acceptThread.start();
-		
-		handleThread = new Thread(() -> handleAll());
-		handleThread.start();
 	}
 	
 	public boolean isClosed() {
@@ -53,13 +51,13 @@ public class Server {
 				acceptThread.join();
 		} catch(InterruptedException ex) {}
 		
-		try {
-			if(handleThread != null)
-				handleThread.join();
-		} catch(InterruptedException ex) {}
+		for(ClientGroup group : clientGroups) {
+			group.stop();
+		}
+		clientGroups.clear();
 	}
 	
-	public void RouteMessage(Client requester, MessageHeader header, byte[] content) throws NotFoundException, InvalidContentException {
+	public void routeMessage(Client requester, MessageHeader header, ByteBuffer content) {
 		MessageContext context = new MessageContext(requester);
 		
 		try {
@@ -71,51 +69,10 @@ public class Server {
 		}
 	}
 	
-	private void handleAll() {
-		try {
-			while(!closed) {
-				List<Client> toRemove = new ArrayList<Client>();
-				synchronized (clients) {
-					for(Client client : clients) {
-						
-						if(client.requestedDisconnect()) {
-							try {
-								client.sendMessageImmediately(new DisconnectedErrorResponse(ErrorDefs.NONE, -1));
-							} catch (Exception ex) {}
-							toRemove.add(client);
-							continue;
-						}
-						else if(client.HasError()) {			
-							try {
-								client.sendMessageImmediately(new UnrecoverableErrorResponse(ErrorDefs.NONE, -1));
-							} catch (Exception ex) {}
-							
-							toRemove.add(client);
-							continue;
-						}
-						
-						client.handle(this);
-					}
-	
-					for(Client client : toRemove) {
-						client.close();
-						clients.remove(client);
-					}
-				}
-				
-				try {
-					Thread.sleep(1);
-				} catch (InterruptedException ex) {
-				    Thread.currentThread().interrupt();
-				}
-			}
-		}
-		finally {
-			for(Client client : clients) {
-				client.close();
-			}
-			clients.clear();
-		}
+	private ClientGroup createNewClientGroup() {
+		ClientGroup group = new ClientGroup();
+		new Thread(() -> group.handle(this)).start();;
+		return group;
 	}
 
 	private void acceptAll() {
@@ -124,10 +81,21 @@ public class Server {
 			try {
 				accepted = (SSLSocket)socket.accept();
 				accepted.setSoTimeout(500);
-				Client client = new Client(accepted);
-
-				synchronized (clients) {
-					clients.add(client);
+				Client client = new Client(accepted, this);
+				
+				boolean added = false;
+				for(ClientGroup group : clientGroups) {
+					if(group.size() < MAX_CLIENTS_PER_GROUP) {
+						group.add(client);
+						added = true;
+						break;
+					}
+				}
+				
+				if(!added) {
+					ClientGroup newGroup = createNewClientGroup();
+					newGroup.add(client);
+					clientGroups.add(newGroup);
 				}
 			} catch(IOException ex) {
 				if(accepted != null)

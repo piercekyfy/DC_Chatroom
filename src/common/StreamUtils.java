@@ -9,6 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
+import common.models.messages.MessageHeader;
+
 public class StreamUtils {
 	
 	public static HeaderParseResult readHeader(InputStream in) throws IOException { 

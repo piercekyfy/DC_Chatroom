@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 import common.MessageSerializer;
 import common.models.messages.ErrorMessage;
+import common.models.messages.MessageHeader;
 import common.MessageDefs;
-import common.MessageHeader;
 
-public class UnrecoverableErrorResponse extends ErrorMessage<UnrecoverableErrorResponse>  {
+public class UnrecoverableErrorResponse extends ErrorMessage  {
 
 	public UnrecoverableErrorResponse(int subCode, int sourceCode) {
 		super(MessageDefs.UNRECOVERABLE_ERROR, subCode, sourceCode);

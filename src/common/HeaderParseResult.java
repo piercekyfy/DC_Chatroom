@@ -1,5 +1,7 @@
 package common;
 
+import common.models.messages.MessageHeader;
+
 public class HeaderParseResult extends ParseResult<MessageHeader> {
 	private int failureArgIndex = -1;
 	

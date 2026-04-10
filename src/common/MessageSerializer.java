@@ -4,6 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import common.models.messages.MessageHeader;
+
 public class MessageSerializer {
 	private int code = MessageDefs.INVALID;
 	private List<MessageContentElement> content = new ArrayList<MessageContentElement>();
@@ -52,11 +54,7 @@ public class MessageSerializer {
 		return new MessageHeader(code, sizes);
 	}
 	
-	public byte[] build() {
-		MessageHeader header = buildHeader();
-		
-		ByteBuffer buffer = ByteBuffer.allocate(header.getSize() + header.getContentSize());
-		
+	public void build(MessageHeader header, ByteBuffer buffer) {
 		buffer.putInt(header.getCode());
 		buffer.putInt(header.getSizes().length);
 		for(int size : header.getSizes())
@@ -65,7 +63,13 @@ public class MessageSerializer {
 		for(MessageContentElement element : content) {
 			buffer.put(element.getBytes());
 		}
-		
-		return buffer.array();
+		buffer.flip();
+	}
+	
+	public ByteBuffer rentBuild(ByteBufferPool pool) {
+		MessageHeader header = buildHeader();
+		ByteBuffer buffer = pool.rent(header.getSize() + header.getContentSize());
+		build(header, buffer);
+		return buffer;
 	}
 }

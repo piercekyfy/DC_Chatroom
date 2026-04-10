@@ -1,0 +1,76 @@
+classDiagram
+    namespace common.models {
+        class TextMessage {
+            -int id
+            -String sender
+            -String content
+        }
+
+        class UserSession {
+            -int NO_SESSION_ID = -1$
+            -int TIMEOUT_MINUTES$
+            -String username
+            -int sessionId
+            -LocalDateTIme lastUpdated
+            -HashSet~Integer~ downloadedIds
+            -boolean online
+            +registerDownloaded(int)
+            +isDownloaded(int) : boolean
+            +setUpdated()
+            +isExpired() : boolean
+        }
+    }
+
+    namespace server {
+        class Interface {
+            -JFrame rootFrame
+            -JPanel topPanel
+            -JPanel mainPanel
+            -JPanel userScrollPanel
+            -JPanel messageScrollPanel
+            -JTextFIeld portInputField
+            -JButton toggleStartButton
+            +registerOnToggleStart(Consumer~String~)
+            +setStarted(boolean)
+            +appendMessage(TextMessage)
+            +appendSystemMessage(String)
+            +drawUsers(List~UserSession~)
+            +setVisible(boolean)
+        }
+
+        class TrackedUserSession {
+            +setOnline(boolean)
+        }
+
+        class MessageRepository {
+            -int currentId
+            List~Consumer~TextMessage~~ onMessageCreatedLIsteners
+            +getAll() : List~TextMessage~
+            +getOne(int) : TextMessage
+            +putOne(String, String) : TextMessage
+            +registerOnMessageCreated(Consumer~TextMessage~ callback)
+            -onMessageCreated(TextMessage)
+        }
+
+        class UserRepository {
+            -int currentId
+            -List~Consumer~UserSession~~ onSessionCreatedListeners
+            -List~Consumer~UserSession~~ onSessionUpdatedListeners
+            -List~Consumer~List~UserSession~~~ onSessionRemovedListeners
+            +getAll() : List~UserSession~
+            +getOne(int) : UserSession
+            +putOne(String) : UserSession
+            +removeSessions(String)
+            +registerOnSessionCreated(Consumer~UserSession~)
+            +registerOnSessionUpdated(Consumer~UserSession~)
+            +registerOnSessionRemoved(Consumer~List~UserSession~~)
+            +onSessionUpdated(UserSession)
+            -onSessionCreated(UserSession)
+            -onSessionRemoved(List~UserSession~ sessions)
+        }
+    }
+
+    TrackedUserSession --|> UserSession
+    TrackedUserSession ..> UserRepository : updates
+    UserRepository "1" ..o "0..*" TrackedUserSession
+    MessageRepository "1" ..o "0..*" TextMessage

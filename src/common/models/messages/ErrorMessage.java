@@ -4,7 +4,7 @@ package common.models.messages;
 import common.MessageSerializer;
 
 
-public abstract class ErrorMessage<E extends ErrorMessage<E>> extends Message<E>  {
+public abstract class ErrorMessage extends Message  {
 	protected int subCode;
 	protected int sourceCode;
 	

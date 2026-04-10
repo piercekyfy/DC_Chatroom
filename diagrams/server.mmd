@@ -1,0 +1,36 @@
+classDiagram    
+    direction LR
+    class Server {
+        -int MAX_CLIENTS_PER_GROUP$
+        -SSLServerSocket socket
+        -Router~Controller~ router
+        -Thread acceptThread
+        -boolean closed
+        -List~ClientGroup~ clientGroups
+        +close()
+        +routeMessage(Client, MessageHeader, ByteBuffer)
+        -acceptAll()
+        -createNewClientGroup()
+    }
+
+    class ClientGroup {
+        -boolean stopped
+        +handle(Server)
+    }
+
+    class Client {
+        -MessageBus bus
+        -UserSession session
+        -boolean requestedDisconnect
+        -boolean clientError
+        +handle(Server)
+        +close()
+        +send(Message)
+        +sendImmediately(Message)
+        +setError()
+    }
+
+    Server "1" --> "0..*" ClientGroup
+    ClientGroup "1" --> "0..*" Client
+
+    

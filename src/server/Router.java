@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 
+import common.StreamUtils;
+
 
 public class Router<T> {
 	protected T controller;
@@ -15,14 +17,14 @@ public class Router<T> {
 		routingMap = buildMap();
 	}
 	
-	public void route(MessageContext context, int code, int[] sizes, byte[] content) throws NotFoundException, InvalidContentException {
+	public void route(MessageContext context, int code, int[] sizes, ByteBuffer content) throws NotFoundException, InvalidContentException {
+		ByteBuffer contentCopy = content.slice();
+		
 		Method controllerRoute = routingMap.getOrDefault(code, null);
 		if(controllerRoute == null)
 			throw new NotFoundException("Expected route definiton (" + code + ").");
 		
 		Object[] paramValues = new Object[controllerRoute.getParameterCount()]; 
-		
-		
 		
 		if(sizes.length == 0) {
 			if(paramValues.length > 0)
@@ -37,24 +39,24 @@ public class Router<T> {
 		
 		int index = 0;
 		int sizeIndex = 0;
-		int offset = 0;
 		for(Parameter param : controllerRoute.getParameters()) {
 			
-			if(offset >= content.length)
+			if(!content.hasRemaining())
 				throw new InvalidContentException(sizeIndex);
 			
 			if(param.getType() == MessageContext.class) {
-				paramValues[index] = context;
-				index++;
+				paramValues[index++] = context;
 				continue;
 			} else if(param.getType() == int.class) {
-				paramValues[index] = decodeInt(content, offset);
+				if(content.remaining() < Integer.BYTES)
+					throw new InvalidContentException(sizeIndex);
+				
+				paramValues[index] = contentCopy.getInt();
 
 			} else if (param.getType() == String.class) {
-				paramValues[index] = decodeString(content, offset, sizes[sizeIndex]);
+				paramValues[index] = decodeString(contentCopy, sizes[sizeIndex]);
 			}
 			
-			offset += sizes[sizeIndex];
 			index++;
 			sizeIndex++;
 		}
@@ -101,12 +103,9 @@ public class Router<T> {
 		return map;
 	}
 	
-	// TODO: replace with common parse methods
-	private int decodeInt(byte[] bytes, int offset) {
-		return ByteBuffer.wrap(bytes, offset, Integer.BYTES).getInt();
-	}
-	
-	private String decodeString(byte[] bytes, int offset, int size) {
-		return StandardCharsets.UTF_8.decode(ByteBuffer.wrap(bytes, offset, size)).toString();
+	private String decodeString(ByteBuffer content, int size) {
+		byte[] bytes = new byte[size];
+		content.get(bytes);
+		return new String(bytes, StandardCharsets.UTF_8);
 	}
 }

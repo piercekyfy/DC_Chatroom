@@ -81,10 +81,8 @@ public class Interface {
 		rootFrame.add(bottomPanel, BorderLayout.SOUTH);
 	}
 	
-	public void registerOnConnect(BiConsumer<String, String> callback) {
+	public void registerOnToggleConnect(BiConsumer<String, String> callback) {
 		connectButton.addActionListener(e -> {
-			topPanel.setVisible(false);
-
 			String host = hostInputField.getText().trim();
 		    String port = portInputField.getText().trim();
 			
@@ -132,8 +130,7 @@ public class Interface {
 	public void setConnected(boolean connected) {
 		hostInputField.setEnabled(!connected);
 		portInputField.setEnabled(!connected);
-		connectButton.setEnabled(!connected);
-		topPanel.setVisible(!connected);
+		connectButton.setText(connected ? "Disconnect" : "Connect");
 		confirmButton.setEnabled(connected);
 		
 		topPanel.revalidate();

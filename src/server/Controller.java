@@ -62,6 +62,7 @@ public class Controller {
 		
 		userRepository.removeSessions(context.getSession().getUsername());
 		
+		context.reply(new DisconnectedErrorResponse(ErrorDefs.NONE, MessageDefs.LOGOUT_REQUEST));
 		context.getSource().requestDisconnect();
 	}
 	
@@ -71,18 +72,21 @@ public class Controller {
 		if(!requireSession(context, MessageDefs.CHECK_MESSAGES))
 			return;
 		
+		int replies = 0;
 		for(TextMessage message : messageRepository.getAll()) {
 			if(context.getSession().isDownloaded(message.getId()))
 				continue;
 			context.reply(new MessageIdResponse(message.getId()));
+			replies++;
+		}
+		
+		if(replies == 0) {
+			context.reply(new GenericErrorResponse(ErrorDefs.NO_MESSAGES, MessageDefs.CHECK_MESSAGES));
 		}
 	}
 	
 	@Route(code = MessageDefs.DOWNLOAD_MESSAGE)
 	public void HandleDownloadRequest(MessageContext context, int id) {
-		if(!requireSession(context, MessageDefs.CHECK_MESSAGES))
-			return;
-		
 		TextMessage message = messageRepository.getOne(id);
 		
 		if(message == null) {
@@ -90,7 +94,10 @@ public class Controller {
 			return;
 		}
 		
-		context.getSession().registerDownloaded(message.getId());
+		if(requireSession(context, MessageDefs.CHECK_MESSAGES)) {
+			context.getSession().registerDownloaded(message.getId());
+		}
+		
 		context.reply(new MessageContentResponse(message.getId(), message.getSender(), message.getContent()));
 	}
 	

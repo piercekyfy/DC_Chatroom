@@ -8,14 +8,16 @@ import java.util.function.Consumer;
 
 import common.models.messages.ErrorMessage;
 import common.models.messages.Message;
+import common.models.messages.MessageBase;
+import common.models.messages.MessageHeader;
 import common.models.responses.GenericErrorResponse;
 
-public class MessageTask<T extends Message<T>> {
-	private class MessageHandler<M extends Message<M>> {
-		private final BiFunction<MessageHeader, ByteBuffer, M> deserializer;
-		private final Consumer<M> callback;
+public class MessageTask implements MessageHandler {
+	private class MessageConsumer<M extends Message> {
+		private BiFunction<MessageHeader, ByteBuffer, M> deserializer;
+		private Consumer<M> callback;
 		
-		public MessageHandler(BiFunction<MessageHeader, ByteBuffer, M> deserializer, Consumer<M> callback) {
+		public MessageConsumer(BiFunction<MessageHeader, ByteBuffer, M> deserializer, Consumer<M> callback) {
 			this.deserializer = deserializer;
 			this.callback = callback;
 		}
@@ -26,16 +28,15 @@ public class MessageTask<T extends Message<T>> {
 	}
 	
 	private int expectCode = MessageDefs.INVALID;
-	private MessageHandler<?> expectHandler = null;
-	private Map<Integer, MessageHandler<?>> errorHandlers = new HashMap<>();
-	private Consumer<Exception> exceptionEvent = null;
-	private Runnable closedEvent = null;
+	private MessageConsumer<?> expectHandler = null;
+	private Map<Integer, MessageConsumer<?>> errorHandlers = new HashMap<>();
+	private Runnable closedHandler = null;
 	
-	private boolean shouldExpire = true;
+	private boolean completed = true;
 	
-	private Message<T> outgoing;
+	private MessageBase outgoing;
 	
-	public MessageTask(Message<T> outgoing) {
+	public MessageTask(MessageBase outgoing) {
 		this.outgoing = outgoing;
 	}
 	
@@ -43,7 +44,11 @@ public class MessageTask<T extends Message<T>> {
 		bus.register(this);
 	}
 	
-	public boolean doesExpect(MessageHeader header, ByteBuffer content) {
+	public boolean expectsAny() {
+		return expectHandler != null || errorHandlers.size() > 0 || closedHandler != null;
+	}
+	
+	public boolean supports(MessageHeader header, ByteBuffer content) {
 		if(header.getCode() == expectCode)
 			return true;
 		else if (errorHandlers.containsKey(header.getCode())) {
@@ -58,7 +63,7 @@ public class MessageTask<T extends Message<T>> {
 		return false;
 	}
 	
-	public void handleMessage(MessageHeader header, ByteBuffer content) {
+	public void handle(MessageHeader header, ByteBuffer content) {
 		if(header.getCode() == expectCode)
 			this.expectHandler.invoke(header, content);
 		else {
@@ -66,51 +71,46 @@ public class MessageTask<T extends Message<T>> {
 		}
 	}
 	
-	public void expire() {
-		this.shouldExpire = true;
+	public void handleStopped() {
+		if(closedHandler != null)
+			closedHandler.run();
 	}
 	
-	public boolean shouldExpire() {
-		return this.shouldExpire;
+	public boolean isComplete() {
+		return this.completed;
 	}
 	
-	public void handleDisconnect() {
-		if(closedEvent != null)
-			closedEvent.run();
+	public void complete() {
+		this.completed = true;
 	}
 	
-	public <M extends Message<M>> MessageTask<T> expect(int code, BiFunction<MessageHeader, ByteBuffer, M> deserializer,  Consumer<M> callback) {
+	public <M extends Message> MessageTask expect(int code, BiFunction<MessageHeader, ByteBuffer, M> deserializer,  Consumer<M> callback) {
 		expectCode = code;
-		expectHandler = new MessageHandler<M>(deserializer, callback);
+		expectHandler = new MessageConsumer<M>(deserializer, callback);
 		return this;
 	}
 	
-	public <E extends ErrorMessage<E>> MessageTask<T> error(Integer code, BiFunction<MessageHeader, ByteBuffer, E> deserializer, Consumer<E> callback) {
-		errorHandlers.put(code, new MessageHandler<E>(deserializer, callback));
+	public <E extends ErrorMessage> MessageTask error(int code, BiFunction<MessageHeader, ByteBuffer, E> deserializer, Consumer<E> callback) {
+		errorHandlers.put(code, new MessageConsumer<E>(deserializer, callback));
 		return this;
 	}
 	
-	public MessageTask<T> error(Integer code, Consumer<GenericErrorResponse> callback) {
-		errorHandlers.put(code, new MessageHandler<>(GenericErrorResponse::from, callback));
+	public MessageTask error(Integer code, Consumer<GenericErrorResponse> callback) {
+		errorHandlers.put(code, new MessageConsumer<>(GenericErrorResponse::from, callback));
 		return this;
 	}
 	
-	public MessageTask<T> closed(Runnable callback) {
-		closedEvent = callback;
+	public MessageTask closed(Runnable callback) {
+		closedHandler = callback;
 		return this;
 	}
 	
-	public MessageTask<T> onException(Consumer<Exception> callback) {
-		exceptionEvent = callback;
+	public MessageTask dontExpireOnComplete() {
+		this.completed = false;
 		return this;
 	}
 	
-	public MessageTask<T> dontExpireOnComplete() {
-		this.shouldExpire = false;
-		return this;
-	}
-	
-	public Message<T> getMessage() {
-		return outgoing;
+	public Message getMessage() {
+		return (Message) outgoing;
 	}
 }
