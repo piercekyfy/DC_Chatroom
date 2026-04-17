@@ -1,16 +1,6 @@
 package client;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.*;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.swing.SwingUtilities;
@@ -18,13 +8,9 @@ import javax.swing.SwingUtilities;
 import client.ui.Interface;
 import client.ui.LoginResult;
 import common.ErrorDefs;
-import common.HeaderParseResult;
-import common.MessageSerializer;
 import common.MessageTask;
 import common.MessageBus;
 import common.MessageDefs;
-import common.ParseResult;
-import common.StreamUtils;
 import common.models.TextMessage;
 import common.models.UserSession;
 import common.models.requests.CheckMessagesRequest;
@@ -36,8 +22,6 @@ import common.models.responses.GenericErrorResponse;
 import common.models.responses.LoginResponse;
 import common.models.responses.MessageContentResponse;
 import common.models.responses.MessageIdResponse;
-import common.ui.UIMessage;
-import server.Client;
 
 
 public class Main {
@@ -134,7 +118,7 @@ public class Main {
 					ui.appendSystemMessage("Login failed! Invalid username or password.");
 				});
 			else if (error.getSubCode() == ErrorDefs.NO_SESSION) {
-				user = null;
+				lastUser = null;
 				SwingUtilities.invokeLater(() -> {
 					ui.appendSystemMessage("Attempted to reconnect with expired session.");
 				});
@@ -145,7 +129,7 @@ public class Main {
 					
 					
 				});
-
+	
 			LoginResult loginResult = ui.doLoginPopup();
 			login(loginResult.Username, loginResult.Password);
 		}
@@ -200,7 +184,7 @@ public class Main {
 		            new CheckMessagesRequest().asTask()
 		            	.dontExpireOnComplete()
 		            	.expect(MessageDefs.MESSAGE_ID, MessageIdResponse::from, Main::registerNewMessage)
-		            	.error(MessageDefs.GENERIC_ERROR, (err) -> { if(err.getSubCode() == ErrorDefs.NO_MESSAGES) { System.out.println("Polled, found nothing."); } })
+		            	.error(MessageDefs.GENERIC_ERROR, (err) -> { if(err.getSubCode() == ErrorDefs.NO_MESSAGES) { return;/*System.out.println("Polled, found nothing.");*/ } })
 		            	.send(bus);
 		        
 				}

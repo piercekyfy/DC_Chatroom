@@ -68,40 +68,40 @@ public class Router<T> {
 		}
 	}
 	
-	protected HashMap<Integer, Method> buildMap() throws InvalidRouteException {
-		HashMap<Integer, Method> map = new HashMap<Integer, Method>();
-		for (Method method : controller.getClass().getMethods()) {
-			Route[] routeAnnotations = method.getAnnotationsByType(Route.class);
-			if(routeAnnotations.length <= 0)
-				continue;
-			
-			for(Route route : routeAnnotations) {
-				if(map.containsKey(route.code())) {
-					throw new InvalidRouteException("Found duplicate route definition (" + route.code() + ") while attempting to build Controller map.");
-				}
-				
-				Parameter[] parameters = method.getParameters();
-				boolean foundContext = false;
-				for(Parameter param : parameters) {
-					if(MessageContext.class == param.getType()) {
-						if(foundContext) {
-							throw new InvalidRouteException("Route definition cannot contain duplicate parameters with type MessageContext.");
-						}
-						
-						foundContext = true;
-					}
-					if(MessageContext.class != param.getType() && int.class != param.getType() && String.class != param.getType()) {
-						throw new InvalidRouteException("Route definition parameters may contain only MessageContext, int and String types.");
-					}
-				}
-				
-				
-				map.put(route.code(), method);
-			}
-		}
+protected HashMap<Integer, Method> buildMap() throws InvalidRouteException {
+	HashMap<Integer, Method> map = new HashMap<Integer, Method>();
+	for (Method method : controller.getClass().getMethods()) {
+		Route[] routeAnnotations = method.getAnnotationsByType(Route.class);
+		if(routeAnnotations.length <= 0)
+			continue;
 		
-		return map;
+		for(Route route : routeAnnotations) {
+			if(map.containsKey(route.code())) {
+				throw new InvalidRouteException("Found duplicate route definition (" + route.code() + ") while attempting to build Controller map.");
+			}
+			
+			Parameter[] parameters = method.getParameters();
+			boolean foundContext = false;
+			for(Parameter param : parameters) {
+				if(MessageContext.class == param.getType()) {
+					if(foundContext) {
+						throw new InvalidRouteException("Route definition cannot contain duplicate parameters with type MessageContext.");
+					}
+					
+					foundContext = true;
+				}
+				if(MessageContext.class != param.getType() && int.class != param.getType() && String.class != param.getType()) {
+					throw new InvalidRouteException("Route definition parameters may contain only MessageContext, int and String types.");
+				}
+			}
+			
+			
+			map.put(route.code(), method);
+		}
 	}
+	
+	return map;
+}
 	
 	private String decodeString(ByteBuffer content, int size) {
 		byte[] bytes = new byte[size];

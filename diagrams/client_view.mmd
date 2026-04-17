@@ -1,0 +1,34 @@
+classDiagram 
+    namespace common.models {
+        class TextMessage {
+            -int id
+            -String sender
+            -String content
+        }
+    }
+
+    namespace client {
+        class Interface {
+            -JFrame rootFrame
+            -JPanel topPanel
+            -JPanel mainScrollPanel
+            -JTextField hostInputField
+            -JTextField portInputField
+            -JButton connectButton
+            -JTextField textInputField
+            -JButton confirmButton
+            +registerOnToggleConnect(BiConsumer~String, String~)
+            +registerOnSend(Consumer~String~)
+            +doLoginPopup() : LoginResult
+            +appendMessage(TextMessage)
+            +appendSystemMessage(String)
+            +clearInput()
+            +setConnect(boolean)
+            +setVisible(boolean)
+        }
+
+        class LoginResult {
+            +String Username
+            +String Password
+        }
+    }

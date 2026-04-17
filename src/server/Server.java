@@ -24,7 +24,7 @@ public class Server {
 	private Thread acceptThread;
 	private boolean closed = false;
 	
-	private List<ClientGroup> clientGroups = new ArrayList<>();
+	private List<ClientGroup> clientGroups = Collections.synchronizedList(new ArrayList<>());
 	
 	public Server(SSLServerSocket socket, Controller controller) throws IOException, InvalidRouteException {
 		this.socket = socket;
@@ -83,19 +83,21 @@ public class Server {
 				accepted.setSoTimeout(500);
 				Client client = new Client(accepted, this);
 				
-				boolean added = false;
-				for(ClientGroup group : clientGroups) {
-					if(group.size() < MAX_CLIENTS_PER_GROUP) {
-						group.add(client);
-						added = true;
-						break;
+				synchronized(clientGroups) { 
+					boolean added = false;
+					for(ClientGroup group : clientGroups) {
+						if(group.size() < MAX_CLIENTS_PER_GROUP) {
+							group.add(client);
+							added = true;
+							break;
+						}
 					}
-				}
-				
-				if(!added) {
-					ClientGroup newGroup = createNewClientGroup();
-					newGroup.add(client);
-					clientGroups.add(newGroup);
+					
+					if(!added) {
+						ClientGroup newGroup = createNewClientGroup();
+						newGroup.add(client);
+						clientGroups.add(newGroup);
+					}
 				}
 			} catch(IOException ex) {
 				if(accepted != null)

@@ -36,7 +36,7 @@ public class ClientGroup {
 						
 						client.handle(server);
 					}
-	
+					
 					for(Client client : toRemove) {
 						client.close();
 						clients.remove(client);
@@ -51,19 +51,25 @@ public class ClientGroup {
 			}
 		}
 		finally {
-			for(Client client : clients) {
-				client.close();
+			synchronized(clients) {
+				for(Client client : clients) {
+					client.close();
+				}
+				clients.clear();
 			}
-			clients.clear();
 		}
 	}
 	
 	public void add(Client client) {
-		clients.add(client);
+		synchronized(clients) {
+			clients.add(client);
+		}
 	}
 	
 	public int size() {
-		return this.clients.size();
+		synchronized(clients) {
+			return this.clients.size();
+		}
 	}
 	
 	public void stop() {
